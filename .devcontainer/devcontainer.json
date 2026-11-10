@@ -1,0 +1,29 @@
+{
+  "name": "FarmaRed – MongoDB + Redis",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "pip install --user -r requirements.txt && sudo apt-get update -qq && sudo apt-get install -y -qq redis-tools",
+  "forwardPorts": [
+    "mongo:27017",
+    "redis:6379"
+  ],
+  "portsAttributes": {
+    "mongo:27017": {
+      "label": "MongoDB"
+    },
+    "redis:6379": {
+      "label": "Redis"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "mongodb.mongodb-vscode",
+        "cweijan.vscode-database-client2"
+      ]
+    }
+  }
+}

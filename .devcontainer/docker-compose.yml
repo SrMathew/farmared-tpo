@@ -1,0 +1,52 @@
+# Entorno completo del TPO: contenedor de desarrollo (app) + MongoDB (replica set) + Redis.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:1-3.12-bookworm
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    environment:
+      MONGO_URI: mongodb://mongo:27017/?replicaSet=rs0
+      REDIS_URL: redis://redis:6379/0
+      TZ: America/Argentina/Buenos_Aires   # "hoy" = fecha del sistema en hora argentina
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8.0
+    # Replica set de un nodo: REQUISITO para transacciones multi-documento (Q14/Q15).
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"   # acceso desde la notebook (Compass / ejecución sin Dev Container)
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Inicializa el replica set la primera vez y queda "healthy" recién cuando hay PRIMARY.
+      test: >
+        mongosh --quiet --eval "try { rs.status() } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}) };
+        quit(db.hello().isWritablePrimary ? 0 : 1)"
+      interval: 5s
+      timeout: 15s
+      retries: 30
+      start_period: 10s
+
+  redis:
+    image: redis:7.4
+    # AOF con fsync en cada escritura: el stock (dato maestro en Redis) sobrevive a reinicios.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mongo-data:
+  redis-data:
