@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "farmared"
+version = "0.1.0"
+description = "FarmaRed pharmacy network back office: polyglot persistence with MongoDB and Redis"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pymongo>=4.10,<5",
+    "redis>=5.0,<9",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "fakeredis>=2.23",
+]
+
+[tool.setuptools.packages.find]
+include = ["farmared*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: import order, UP: modern syntax, B: likely bugs, SIM: simplifications
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "unit: runs with in-memory fakes, no database engines needed",
+    "integration: runs against the MongoDB and Redis services of the dev container",
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["farmared"]
+ignore_missing_imports = true
+check_untyped_defs = true

@@ -1,4 +1,6 @@
-# Entorno completo del TPO: contenedor de desarrollo (app) + MongoDB (replica set) + Redis.
+# Full project environment: development container (app) + MongoDB (replica set) + Redis.
+# The project runs only inside this dev container (GitHub Codespaces or local Docker),
+# so no port is published to the host; devcontainer.json forwards them when needed.
 services:
   app:
     image: mcr.microsoft.com/devcontainers/python:1-3.12-bookworm
@@ -8,7 +10,7 @@ services:
     environment:
       MONGO_URI: mongodb://mongo:27017/?replicaSet=rs0
       REDIS_URL: redis://redis:6379/0
-      TZ: America/Argentina/Buenos_Aires   # "hoy" = fecha del sistema en hora argentina
+      TZ: America/Argentina/Buenos_Aires   # "today" is the system date in Argentina time
     depends_on:
       mongo:
         condition: service_healthy
@@ -17,14 +19,12 @@ services:
 
   mongo:
     image: mongo:8.0
-    # Replica set de un nodo: REQUISITO para transacciones multi-documento (Q14/Q15).
+    # Single-node replica set: required for multi-document transactions (q14 + q15).
     command: ["--replSet", "rs0", "--bind_ip_all"]
-    ports:
-      - "27017:27017"   # acceso desde la notebook (Compass / ejecución sin Dev Container)
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      # Inicializa el replica set la primera vez y queda "healthy" recién cuando hay PRIMARY.
+      # Initiates the replica set on first start; healthy only once there is a PRIMARY.
       test: >
         mongosh --quiet --eval "try { rs.status() } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}) };
         quit(db.hello().isWritablePrimary ? 0 : 1)"
@@ -35,10 +35,9 @@ services:
 
   redis:
     image: redis:7.4
-    # AOF con fsync en cada escritura: el stock (dato maestro en Redis) sobrevive a reinicios.
-    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always"]
-    ports:
-      - "6379:6379"
+    # Redis only holds data derived from MongoDB (cache, ranking, idempotency keys), all of
+    # it rebuildable, so the default AOF policy (fsync every second) is enough.
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
     healthcheck:
