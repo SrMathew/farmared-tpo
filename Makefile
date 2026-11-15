@@ -1,4 +1,4 @@
-.PHONY: help install check load rebuild-redis check-consistency lint format typecheck test test-unit test-integration
+.PHONY: help install check load api rebuild-redis check-consistency lint format typecheck test test-unit test-integration
 
 help:              ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -11,6 +11,9 @@ check:             ## Check that MongoDB (replica set) and Redis are reachable
 
 load:              ## Validate and load the CSV datasets into MongoDB (idempotent)
 	python scripts/load_data.py
+
+api:               ## Serve the 15 queries over HTTP; Swagger at http://localhost:8000/docs
+	uvicorn farmared.api:app --host 0.0.0.0 --port 8000
 
 rebuild-redis:     ## Rebuild in Redis the data derived from MongoDB
 	python scripts/rebuild_redis.py

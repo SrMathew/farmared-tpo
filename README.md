@@ -40,7 +40,7 @@ de host, y VS Code reenvía los puertos cuando hace falta.
 
 Servicio | Imagen                              | Host    | Puerto
 ---------|-------------------------------------|---------|--------
-`app`    | Python 3.12 (dev container)         | —       | —
+`app`    | Python 3.12 (dev container); API con `make api` | `localhost` | 8000
 `mongo`  | `mongo:8.0`, replica set `rs0`      | `mongo` | 27017
 `redis`  | `redis:7.4`, persistencia AOF       | `redis` | 6379
 
@@ -195,6 +195,33 @@ python -m farmared q14 --cliente C101 --farmaceutico F101 --item PRD101:2 --item
 productos bajo receta. `--clave` es opcional: es una clave de idempotencia, y repetir un
 pedido con la misma clave no registra una segunda venta.
 
+### API con Swagger
+
+Las mismas 15 consultas se pueden ejecutar por HTTP, con una página para probarlas desde el
+navegador:
+
+```bash
+make api
+```
+
+Después abrir `http://localhost:8000/docs` (en Codespaces: pestaña **Ports**, puerto 8000,
+*Open in Browser*, y agregar `/docs` a la dirección). Cada consulta tiene su endpoint, con
+el mismo nombre que en la línea de comandos:
+
+Endpoint | Consulta
+---------|---------
+`GET /q01`, `/q02`, `/q04` a `/q09`, `/q11`, `/q12` | Lecturas y agregaciones sin parámetros obligatorios
+`GET /q03/{id_cliente}`, `GET /q10/{id_sucursal}` | Lecturas con parámetro
+`POST /q13/clientes`, `PATCH /q13/clientes/{id_cliente}`, `DELETE /q13/clientes/{id_cliente}` | Alta, modificación y baja lógica de clientes
+`POST /q14/ventas` | Registro de una venta
+`POST /q15/ventas/{id_venta}/stock` | Descuento de stock de una venta registrada
+
+La API no tiene lógica propia: cada endpoint llama a la misma función que la línea de
+comandos. Si una validación no se cumple responde con estado 400 y la lista de motivos.
+
+Si el entorno se creó antes de que existiera la API, instalar las dependencias nuevas una
+vez con `make install`.
+
 ### Coherencia entre Redis y MongoDB
 
 MongoDB es el único sistema de registro. Redis guarda solo datos derivados (la caché de
@@ -220,6 +247,7 @@ Comando                 | Qué hace
 `make help`             | Lista los comandos disponibles
 `make check`            | Verifica que MongoDB (replica set) y Redis respondan
 `make load`             | Valida y carga los datasets en MongoDB
+`make api`              | Levanta la API; Swagger en `http://localhost:8000/docs`
 `make check-consistency`| Verifica que Redis coincida con MongoDB
 `make rebuild-redis`    | Reconstruye en Redis los datos derivados de MongoDB
 `make test`             | Corre todos los tests
@@ -239,6 +267,8 @@ data/added/      Registros adicionales propios
 docs/            Enunciado e informe
 farmared/        Paquete Python del sistema
 farmared/services/  Un módulo por consulta (q01 a q15)
+farmared/cli.py     Las consultas por línea de comandos
+farmared/api.py     Las consultas por HTTP (FastAPI + Swagger)
 farmared/repositories/  Interfaces que usan los servicios de escritura
 farmared/adapters/  Acceso a MongoDB y a Redis
 scripts/         Puntos de entrada ejecutables: entorno, carga y coherencia de Redis
