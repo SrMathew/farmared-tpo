@@ -17,6 +17,7 @@ import argparse
 import sys
 
 from farmared.adapters.mongo.connection import get_database
+from farmared.adapters.mongo.customers import MongoCustomers
 from farmared.adapters.redis.catalog_cache import CatalogCache
 from farmared.adapters.redis.connection import get_redis
 from farmared.adapters.redis.product_ranking import ProductRanking
@@ -46,6 +47,12 @@ from farmared.services.q11_pharmacist_income_current_month import (
 )
 from farmared.services.q12_customers_without_sales_last_year import (
     customers_without_sales_last_year,
+)
+from farmared.services.q13_customer_management import (
+    EDITABLE_FIELDS,
+    create_customer,
+    deactivate_customer,
+    update_customer,
 )
 
 
@@ -109,6 +116,43 @@ def _q12(args: argparse.Namespace) -> None:
     print_result("q12 - Clientes activos sin ventas en el último año", result)
 
 
+def _given(args: argparse.Namespace, fields: tuple[str, ...]) -> dict[str, str]:
+    """The optional arguments the user actually wrote."""
+    return {field: getattr(args, field) for field in fields if getattr(args, field) is not None}
+
+
+def _q13_create(args: argparse.Namespace) -> None:
+    result = create_customer(
+        MongoCustomers(get_database()),
+        args.nombre,
+        args.apellido,
+        args.dni,
+        **_given(args, EDITABLE_FIELDS),
+    )
+    print_result("q13 - Alta de cliente", result)
+
+
+def _q13_update(args: argparse.Namespace) -> None:
+    result = update_customer(
+        MongoCustomers(get_database()), args.id_cliente, **_given(args, EDITABLE_FIELDS)
+    )
+    print_result(f"q13 - Modificación del cliente {args.id_cliente}", result)
+
+
+def _q13_deactivate(args: argparse.Namespace) -> None:
+    result = deactivate_customer(MongoCustomers(get_database()), args.id_cliente)
+    print_result(f"q13 - Baja lógica del cliente {args.id_cliente}", result)
+
+
+def _add_contact_and_coverage(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--email")
+    parser.add_argument("--telefono")
+    parser.add_argument("--ciudad")
+    parser.add_argument("--provincia")
+    parser.add_argument("--obra-social", dest="obra_social", help='por ejemplo "OSDE"')
+    parser.add_argument("--nro-afiliado", dest="nro_afiliado")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -162,6 +206,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     q12 = commands.add_parser("q12", help="Clientes activos sin ventas en el último año")
     q12.set_defaults(run=_q12)
+
+    q13 = commands.add_parser("q13", help="Clientes: alta, modificación y baja lógica")
+    operations = q13.add_subparsers(dest="operation", required=True, metavar="operación")
+
+    create = operations.add_parser("alta", help="Dar de alta un cliente (DNI único)")
+    create.add_argument("--nombre", required=True)
+    create.add_argument("--apellido", required=True)
+    create.add_argument("--dni", required=True)
+    _add_contact_and_coverage(create)
+    create.set_defaults(run=_q13_create)
+
+    update = operations.add_parser("modificar", help="Cambiar datos de contacto y cobertura")
+    update.add_argument("id_cliente", help="identificador del cliente, por ejemplo C101")
+    _add_contact_and_coverage(update)
+    update.set_defaults(run=_q13_update)
+
+    deactivate = operations.add_parser("baja", help="Dar de baja lógica un cliente")
+    deactivate.add_argument("id_cliente", help="identificador del cliente, por ejemplo C101")
+    deactivate.set_defaults(run=_q13_deactivate)
 
     return parser
 

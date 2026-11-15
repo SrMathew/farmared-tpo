@@ -78,3 +78,17 @@ def loaded(_test_database):
     get_settings.cache_clear()
     load_data(_test_database, get_redis(), DATA, TODAY)
     return _test_database
+
+
+@pytest.fixture
+def loaded_for_writing(_test_database):
+    """The database with all the data, loaded again for each test.
+
+    For the write services (q13 to q15): every test starts from the same known state.
+    """
+    from farmared.adapters.redis.connection import get_redis
+    from farmared.loading.loader import load_data
+
+    get_settings.cache_clear()
+    load_data(_test_database, get_redis(), DATA, TODAY)
+    return _test_database

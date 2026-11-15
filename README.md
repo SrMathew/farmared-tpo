@@ -142,6 +142,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 10  | Clientes atendidos en una sucursal dada, a través del farmacéutico que registró la venta (esté activo o no) | `python -m farmared q10 S002` | MongoDB | [`q10_customers_served_at_branch.py`](./farmared/services/q10_customers_served_at_branch.py)
 11  | Vista agregada: ingresos totales por farmacéutico en el mes actual | `python -m farmared q11` | MongoDB (vista) | [`q11_pharmacist_income_current_month.py`](./farmared/services/q11_pharmacist_income_current_month.py)
 12  | Clientes sin ninguna venta registrada en el último año | `python -m farmared q12` | MongoDB | [`q12_customers_without_sales_last_year.py`](./farmared/services/q12_customers_without_sales_last_year.py)
+13  | ABM de clientes: alta (DNI único), modificación de contacto y cobertura, y baja lógica | `python -m farmared q13 alta ...` (ver abajo) | MongoDB | [`q13_customer_management.py`](./farmared/services/q13_customer_management.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
@@ -153,7 +154,26 @@ colecciones. La vista calcula el mes actual con el reloj de MongoDB, en hora de 
 es un dato derivado de las ventas guardadas en MongoDB: la carga lo deja armado, y si falta
 se reconstruye solo antes de responder. Con `--limit N` lista otra cantidad de productos.
 
-Las consultas 10 a 15 se agregan en los próximos commits.
+`q13` tiene una operación por subcomando. Cada una imprime el cliente antes y después; si
+una validación no se cumple, imprime "Operación rechazada" con el motivo y no modifica nada.
+
+```bash
+python -m farmared q13 alta --nombre Elena --apellido Vidal --dni 38123456 --obra-social OSDE --nro-afiliado OS-900100 --email elena.vidal@mail.com
+```
+
+```bash
+python -m farmared q13 modificar C111 --telefono 1144556677 --obra-social "Sin cobertura"
+```
+
+```bash
+python -m farmared q13 baja C111
+```
+
+El alta genera el identificador (`C111` es el primero libre después de la carga). La
+modificación acepta `--email`, `--telefono`, `--ciudad`, `--provincia`, `--obra-social` y
+`--nro-afiliado`, y cambia solo los que se indiquen.
+
+Las consultas 14 y 15 se agregan en los próximos commits.
 
 ### Coherencia entre Redis y MongoDB
 
@@ -197,6 +217,8 @@ data/added/      Registros adicionales propios
 docs/            Enunciado e informe
 farmared/        Paquete Python del sistema
 farmared/services/  Un módulo por consulta (q01 a q15)
+farmared/repositories/  Interfaces que usan los servicios de escritura
+farmared/adapters/  Acceso a MongoDB y a Redis
 scripts/         Puntos de entrada ejecutables: entorno, carga y coherencia de Redis
 tests/           Tests (pytest)
 pyproject.toml   Dependencias y configuración de las herramientas
