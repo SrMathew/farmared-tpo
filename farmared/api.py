@@ -11,6 +11,7 @@ rules that were not met; nothing was modified in that case.
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from farmared.adapters.mongo.connection import get_database
@@ -82,6 +83,12 @@ def rejected(request: Request, error: BusinessRuleError) -> Response:
         status_code=400,
         media_type="application/json",
     )
+
+
+@app.get("/", include_in_schema=False)
+def home() -> RedirectResponse:
+    """The root address shows the Swagger page."""
+    return RedirectResponse("/docs")
 
 
 # --- Request bodies of the write services -----------------------------------------------

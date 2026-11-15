@@ -204,8 +204,8 @@ navegador:
 make api
 ```
 
-Después abrir `http://localhost:8000/docs` (en Codespaces: pestaña **Ports**, puerto 8000,
-*Open in Browser*, y agregar `/docs` a la dirección). Cada consulta tiene su endpoint, con
+Después abrir `http://localhost:8000` (en Codespaces: pestaña **Ports**, puerto 8000,
+*Open in Browser*). La dirección raíz lleva a la página Swagger, que está en `/docs`. Cada consulta tiene su endpoint, con
 el mismo nombre que en la línea de comandos:
 
 Endpoint | Consulta
