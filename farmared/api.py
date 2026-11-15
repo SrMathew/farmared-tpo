@@ -206,9 +206,7 @@ def q05() -> Response:
     return reply(pharmacist_sales_last_60_days(get_database(), get_clock()))
 
 
-@app.get(
-    "/q06", tags=[READ], summary="Tratamientos prolongados vigentes con la dispensa atrasada"
-)
+@app.get("/q06", tags=[READ], summary="Tratamientos prolongados vigentes con la dispensa atrasada")
 def q06() -> Response:
     return reply(overdue_long_term_prescriptions(get_database(), get_clock()))
 
@@ -218,9 +216,7 @@ def q07(limite: int = TOP) -> Response:
     return reply(top_products(get_database(), ProductRanking(get_redis()), limite))
 
 
-@app.get(
-    "/q08", tags=[READ], summary="Lotes con poco stock, con producto, sucursal y proveedor"
-)
+@app.get("/q08", tags=[READ], summary="Lotes con poco stock, con producto, sucursal y proveedor")
 def q08(menos_de: int = LOW_STOCK) -> Response:
     return reply(low_stock_batches(get_database(), menos_de))
 
@@ -235,9 +231,7 @@ def q10(id_sucursal: str) -> Response:
     return reply(customers_served_at_branch(get_database(), id_sucursal))
 
 
-@app.get(
-    "/q11", tags=[AGGREGATION], summary="Ingresos por farmacéutico en el mes actual (vista)"
-)
+@app.get("/q11", tags=[AGGREGATION], summary="Ingresos por farmacéutico en el mes actual (vista)")
 def q11() -> Response:
     return reply(pharmacist_income_current_month(get_database(), get_clock()))
 
