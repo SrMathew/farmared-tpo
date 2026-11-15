@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from copy import deepcopy
+from typing import Any
 
 from farmared.domain.models import Batch, Sale
 
@@ -42,13 +43,14 @@ class InMemoryStore:
 class InMemoryUnitOfWork:
     """All or nothing, like a transaction: if the work raises, the store goes back."""
 
-    def __init__(self, store: InMemoryStore) -> None:
+    def __init__(self, store: Any) -> None:
         self.store = store
 
-    def run[T](self, work: Callable[[InMemoryStore], T]) -> T:
-        sales, batches = deepcopy(self.store.sales), deepcopy(self.store.batches)
+    def run[T](self, work: Callable[[Any], T]) -> T:
+        before = deepcopy(vars(self.store))
         try:
             return work(self.store)
         except Exception:
-            self.store.sales, self.store.batches = sales, batches
+            vars(self.store).clear()
+            vars(self.store).update(before)
             raise

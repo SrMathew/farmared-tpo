@@ -21,11 +21,13 @@ from farmared.adapters.mongo.customers import MongoCustomers
 from farmared.adapters.mongo.unit_of_work import MongoUnitOfWork
 from farmared.adapters.redis.catalog_cache import CatalogCache
 from farmared.adapters.redis.connection import get_redis
+from farmared.adapters.redis.idempotency_keys import RedisIdempotencyKeys
 from farmared.adapters.redis.product_ranking import ProductRanking
 from farmared.clock import get_clock
 from farmared.config import get_settings
 from farmared.domain.errors import BusinessRuleError
 from farmared.output import print_result
+from farmared.services.complete_pending_sale import complete_pending_sale
 from farmared.services.q01_active_products_with_supplier import active_products_with_supplier
 from farmared.services.q02_pending_sales import pending_sales
 from farmared.services.q03_customer_history import customer_history
@@ -55,6 +57,7 @@ from farmared.services.q13_customer_management import (
     deactivate_customer,
     update_customer,
 )
+from farmared.services.q14_register_sale import register_sale
 from farmared.services.q15_update_stock import update_stock
 
 
@@ -146,6 +149,38 @@ def _q13_deactivate(args: argparse.Namespace) -> None:
     print_result(f"q13 - Baja lógica del cliente {args.id_cliente}", result)
 
 
+def _item(text: str) -> tuple[str, int]:
+    """An item written as PRODUCT:QUANTITY, for example PRD101:2."""
+    id_producto, separator, quantity = text.partition(":")
+    if not separator or not quantity.isdigit():
+        raise argparse.ArgumentTypeError(f"'{text}' no tiene la forma PRODUCTO:CANTIDAD")
+    return id_producto, int(quantity)
+
+
+def _q14(args: argparse.Namespace) -> None:
+    redis = get_redis()
+    result = register_sale(
+        MongoUnitOfWork(get_database()),
+        ProductRanking(redis),
+        get_clock(),
+        args.cliente,
+        args.farmaceutico,
+        args.item,
+        args.medio_pago,
+        id_receta=args.receta,
+        idempotency=RedisIdempotencyKeys(redis),
+        idempotency_key=args.clave,
+    )
+    print_result("q14 - Registro de venta", result)
+
+
+def _complete(args: argparse.Namespace) -> None:
+    result = complete_pending_sale(
+        MongoUnitOfWork(get_database()), ProductRanking(get_redis()), get_clock(), args.id_venta
+    )
+    print_result(f"Retiro de la venta pendiente {args.id_venta}", result)
+
+
 def _q15(args: argparse.Namespace) -> None:
     result = update_stock(MongoUnitOfWork(get_database()), get_clock(), args.id_venta)
     print_result(f"q15 - Descuento de stock de la venta {args.id_venta}", result)
@@ -233,9 +268,31 @@ def build_parser() -> argparse.ArgumentParser:
     deactivate.add_argument("id_cliente", help="identificador del cliente, por ejemplo C101")
     deactivate.set_defaults(run=_q13_deactivate)
 
+    q14 = commands.add_parser("q14", help="Registrar una venta completada, con su stock")
+    q14.add_argument("--cliente", required=True, help="por ejemplo C101")
+    q14.add_argument("--farmaceutico", required=True, help="por ejemplo F101")
+    q14.add_argument(
+        "--item",
+        required=True,
+        action="append",
+        type=_item,
+        metavar="PRODUCTO:CANTIDAD",
+        help="un ítem, por ejemplo PRD101:2; se repite por cada producto",
+    )
+    q14.add_argument("--medio-pago", dest="medio_pago", required=True, help='por ejemplo "Débito"')
+    q14.add_argument("--receta", help="receta, si hay productos bajo receta")
+    q14.add_argument("--clave", help="clave de idempotencia: repetirla no registra otra venta")
+    q14.set_defaults(run=_q14)
+
     q15 = commands.add_parser("q15", help="Descontar el stock de una venta registrada (FEFO)")
     q15.add_argument("id_venta", help="identificador de la venta, por ejemplo V118")
     q15.set_defaults(run=_q15)
+
+    complete = commands.add_parser(
+        "retiro", help="Completar una venta pendiente (no es una de las 15 consultas)"
+    )
+    complete.add_argument("id_venta", help="identificador de la venta, por ejemplo V011")
+    complete.set_defaults(run=_complete)
 
     return parser
 

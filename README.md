@@ -143,6 +143,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 11  | Vista agregada: ingresos totales por farmacéutico en el mes actual | `python -m farmared q11` | MongoDB (vista) | [`q11_pharmacist_income_current_month.py`](./farmared/services/q11_pharmacist_income_current_month.py)
 12  | Clientes sin ninguna venta registrada en el último año | `python -m farmared q12` | MongoDB | [`q12_customers_without_sales_last_year.py`](./farmared/services/q12_customers_without_sales_last_year.py)
 13  | ABM de clientes: alta (DNI único), modificación de contacto y cobertura, y baja lógica | `python -m farmared q13 alta ...` (ver abajo) | MongoDB | [`q13_customer_management.py`](./farmared/services/q13_customer_management.py)
+14  | Registro de una venta "Completada" (cabecera e ítems) con sus validaciones; actualiza la receta y el stock | `python -m farmared q14 ...` (ver abajo) | MongoDB (transacción) + Redis | [`q14_register_sale.py`](./farmared/services/q14_register_sale.py)
 15  | Actualización masiva del stock de una venta registrada: FEFO, sin lotes vencidos, todo o nada | `python -m farmared q15 V118` | MongoDB (transacción) | [`q15_update_stock.py`](./farmared/services/q15_update_stock.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
@@ -179,12 +180,32 @@ venta. Solo lo hace con una venta "Completada" que todavía no lo descontó; el 
 ventas (`q14`) la ejecuta dentro de su misma transacción. Imprime cada lote usado con sus
 unidades antes y después.
 
-La consulta 14 se agrega en el próximo commit.
+`q14` registra una venta completada. Valida cliente, farmacéutico, sucursal, productos y
+receta; calcula el total con los precios del catálogo; actualiza la receta y descuenta el
+stock con `q15`. Todo va en una sola transacción de MongoDB: si algo falla (por ejemplo,
+falta stock), no queda la venta, ni la receta modificada, ni ningún lote tocado.
+
+```bash
+python -m farmared q14 --cliente C101 --farmaceutico F101 --item PRD101:2 --item PRD103:1 --medio-pago Débito --receta RC102
+```
+
+`--item PRODUCTO:CANTIDAD` se repite por cada producto. `--receta` hace falta solo si hay
+productos bajo receta. `--clave` es opcional: es una clave de idempotencia, y repetir un
+pedido con la misma clave no registra una segunda venta.
+
+Además de las 15 consultas hay un comando para completar una venta pendiente (el cliente
+vuelve a retirarla). Aplica las mismas reglas que `q14` y descuenta el stock con `q15`:
+
+```bash
+python -m farmared retiro V011
+```
 
 ### Coherencia entre Redis y MongoDB
 
 MongoDB es el único sistema de registro. Redis guarda solo datos derivados (la caché de
-`q01` y el ranking de `q07`), que se pueden comparar con MongoDB y reconstruir a partir de él:
+`q01` y el ranking de `q07`), que se pueden comparar con MongoDB y reconstruir a partir de él.
+`q14` suma cada venta al ranking recién después de confirmarla en MongoDB, una sola vez por
+venta. Las claves de idempotencia de `q14` no derivan de MongoDB: vencen solas.
 
 ```bash
 make check-consistency
