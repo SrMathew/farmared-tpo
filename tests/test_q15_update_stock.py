@@ -134,9 +134,10 @@ def test_two_items_of_the_same_product_are_covered_together():
         SaleItem(id_detalle="D1", id_producto="P1", cantidad=4, precio_unit=100),
         SaleItem(id_detalle="D2", id_producto="P1", cantidad=3, precio_unit=100),
     ]
-    store = InMemoryStore(
-        [sale("V1", {"P1": 1}, items=lines, total=700)], [batch("L1", 10, date(2027, 1, 31))]
+    two_lines = Sale.model_validate(
+        sale("V1", {"P1": 1}).model_dump() | {"items": lines, "total": 700}
     )
+    store = InMemoryStore([two_lines], [batch("L1", 10, date(2027, 1, 31))])
 
     run(store)
 
