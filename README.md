@@ -126,7 +126,9 @@ python -m farmared <consulta> [parámetros]
 ```
 
 El resultado se imprime en formato JSON. Cada consulta está en su propio módulo dentro de
-`farmared/services/`, y su sentencia de MongoDB está en `farmared/adapters/mongo/queries.py`.
+`farmared/services/`. Las sentencias de MongoDB de las lecturas (`q01` a `q12`) están en
+`farmared/adapters/mongo/queries.py`; las de los servicios de escritura (`q13` a `q15`), en
+`farmared/adapters/mongo/customers.py` y `farmared/adapters/mongo/unit_of_work.py`.
 
 \#  | Consulta | Comando | Motor | Módulo
 ----|----------|---------|-------|-------

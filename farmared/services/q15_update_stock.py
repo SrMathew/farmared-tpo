@@ -56,8 +56,8 @@ def apply_stock(store: StockStore, id_venta: str, today: date) -> dict[str, Any]
 
     # First decide every batch to use; only if all the products are covered is anything
     # written. Products go in a fixed order so two sales always take batches the same way.
-    movements = []
-    shortages = []
+    movements: list[dict[str, Any]] = []
+    shortages: list[str] = []
     for id_producto in sorted(quantities):
         batches = {b.id_lote: b for b in store.batches_of(sale.id_sucursal, id_producto)}
         try:
