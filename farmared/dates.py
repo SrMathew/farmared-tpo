@@ -28,6 +28,14 @@ def parse_date(value: str | None, today: date) -> date | None:
     return date.fromisoformat(text)
 
 
+def one_year_before(day: date) -> date:
+    """The same day of the previous year (February 28 for a February 29)."""
+    try:
+        return day.replace(year=day.year - 1)
+    except ValueError:
+        return day.replace(year=day.year - 1, day=28)
+
+
 def month_start(day: date) -> date:
     return day.replace(day=1)
 

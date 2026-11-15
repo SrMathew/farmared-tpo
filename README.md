@@ -141,6 +141,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 9   | Ventas de tipo "Venta libre" con total menor a $5.000, sin las anuladas | `python -m farmared q09` | MongoDB | [`q09_small_over_the_counter_sales.py`](./farmared/services/q09_small_over_the_counter_sales.py)
 10  | Clientes atendidos en una sucursal dada, a través del farmacéutico que registró la venta (esté activo o no) | `python -m farmared q10 S002` | MongoDB | [`q10_customers_served_at_branch.py`](./farmared/services/q10_customers_served_at_branch.py)
 11  | Vista agregada: ingresos totales por farmacéutico en el mes actual | `python -m farmared q11` | MongoDB (vista) | [`q11_pharmacist_income_current_month.py`](./farmared/services/q11_pharmacist_income_current_month.py)
+12  | Clientes sin ninguna venta registrada en el último año | `python -m farmared q12` | MongoDB | [`q12_customers_without_sales_last_year.py`](./farmared/services/q12_customers_without_sales_last_year.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.

@@ -44,6 +44,9 @@ from farmared.services.q10_customers_served_at_branch import customers_served_at
 from farmared.services.q11_pharmacist_income_current_month import (
     pharmacist_income_current_month,
 )
+from farmared.services.q12_customers_without_sales_last_year import (
+    customers_without_sales_last_year,
+)
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -101,6 +104,11 @@ def _q11(args: argparse.Namespace) -> None:
     print_result("q11 - Ingresos por farmacéutico en el mes actual", result)
 
 
+def _q12(args: argparse.Namespace) -> None:
+    result = customers_without_sales_last_year(get_database(), get_clock())
+    print_result("q12 - Clientes activos sin ventas en el último año", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -151,6 +159,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     q11 = commands.add_parser("q11", help="Ingresos por farmacéutico en el mes actual (vista)")
     q11.set_defaults(run=_q11)
+
+    q12 = commands.add_parser("q12", help="Clientes activos sin ventas en el último año")
+    q12.set_defaults(run=_q12)
 
     return parser
 

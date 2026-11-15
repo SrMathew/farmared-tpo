@@ -5,7 +5,13 @@ from datetime import date, datetime
 import pytest
 
 from farmared.clock import FixedClock, SystemClock, get_clock
-from farmared.dates import month_start, next_month_start, parse_date, to_datetime
+from farmared.dates import (
+    month_start,
+    next_month_start,
+    one_year_before,
+    parse_date,
+    to_datetime,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -58,3 +64,8 @@ def test_month_boundaries():
     assert month_start(TODAY) == date(2026, 10, 1)
     assert next_month_start(TODAY) == date(2026, 11, 1)
     assert next_month_start(date(2026, 12, 31)) == date(2027, 1, 1)
+
+
+def test_one_year_before_is_the_same_day_of_the_previous_year():
+    assert one_year_before(date(2026, 11, 15)) == date(2025, 11, 15)
+    assert one_year_before(date(2028, 2, 29)) == date(2027, 2, 28)

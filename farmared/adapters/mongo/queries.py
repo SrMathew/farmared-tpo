@@ -542,3 +542,50 @@ def pharmacist_income_in_month_of(database: Database[Document], day: date) -> li
     """
     noon = datetime.combine(day, time(12))
     return list(database.ventas.aggregate(monthly_income_pipeline(noon)))
+
+
+def active_customers_without_sales_since(
+    database: Database[Document], since: date
+) -> list[Document]:
+    """q12. Active customers with no sale registered from `since` on.
+
+    An anti-join: the pipeline starts from the customers and $lookup brings, for each one,
+    a sale of the period (ventas.id_cliente -> clientes._id); the customers whose list
+    comes back empty are the ones kept. One sale is enough to rule a customer out, so the
+    lookup stops at the first one ($limit).
+    """
+    return list(
+        database.clientes.aggregate(
+            [
+                {"$match": {"activo": True}},
+                {
+                    "$lookup": {
+                        "from": "ventas",
+                        "localField": "_id",
+                        "foreignField": "id_cliente",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "fecha": {"$gte": to_datetime(since)},
+                                    "estado": {"$ne": SaleStatus.CANCELLED.value},
+                                    "activo": True,
+                                }
+                            },
+                            {"$limit": 1},
+                        ],
+                        "as": "ventas",
+                    }
+                },
+                {"$match": {"ventas": []}},
+                {"$sort": {"_id": 1}},
+                {
+                    "$replaceWith": {
+                        "id_cliente": "$_id",
+                        "nombre": "$nombre",
+                        "apellido": "$apellido",
+                        "dni": "$dni",
+                    }
+                },
+            ]
+        )
+    )
