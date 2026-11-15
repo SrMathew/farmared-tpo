@@ -8,21 +8,17 @@ Exits with code 1 if any engine is unreachable or MongoDB is not a replica set
 (multi-document transactions need one).
 """
 
-import os
 import sys
 
-import redis
-from pymongo import MongoClient
-
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://mongo:27017/?replicaSet=rs0")
-REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+from farmared.adapters.mongo.connection import get_client
+from farmared.adapters.redis.connection import get_redis
 
 
 def main() -> int:
     ok = True
 
     try:
-        client: MongoClient = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        client = get_client()
         client.admin.command("ping")
         replica_set = client.admin.command("hello").get("setName")
         print(f"MongoDB: OK (replica set: {replica_set})")
@@ -34,7 +30,7 @@ def main() -> int:
         ok = False
 
     try:
-        redis.Redis.from_url(REDIS_URL, socket_connect_timeout=5).ping()
+        get_redis().ping()
         print("Redis:   OK")
     except Exception as exc:
         print(f"Redis:   ERROR - {exc}")
