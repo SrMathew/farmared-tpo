@@ -18,6 +18,7 @@ import sys
 
 from farmared.adapters.mongo.connection import get_database
 from farmared.adapters.mongo.customers import MongoCustomers
+from farmared.adapters.mongo.unit_of_work import MongoUnitOfWork
 from farmared.adapters.redis.catalog_cache import CatalogCache
 from farmared.adapters.redis.connection import get_redis
 from farmared.adapters.redis.product_ranking import ProductRanking
@@ -54,6 +55,7 @@ from farmared.services.q13_customer_management import (
     deactivate_customer,
     update_customer,
 )
+from farmared.services.q15_update_stock import update_stock
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -144,6 +146,11 @@ def _q13_deactivate(args: argparse.Namespace) -> None:
     print_result(f"q13 - Baja lógica del cliente {args.id_cliente}", result)
 
 
+def _q15(args: argparse.Namespace) -> None:
+    result = update_stock(MongoUnitOfWork(get_database()), get_clock(), args.id_venta)
+    print_result(f"q15 - Descuento de stock de la venta {args.id_venta}", result)
+
+
 def _add_contact_and_coverage(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--email")
     parser.add_argument("--telefono")
@@ -225,6 +232,10 @@ def build_parser() -> argparse.ArgumentParser:
     deactivate = operations.add_parser("baja", help="Dar de baja lógica un cliente")
     deactivate.add_argument("id_cliente", help="identificador del cliente, por ejemplo C101")
     deactivate.set_defaults(run=_q13_deactivate)
+
+    q15 = commands.add_parser("q15", help="Descontar el stock de una venta registrada (FEFO)")
+    q15.add_argument("id_venta", help="identificador de la venta, por ejemplo V118")
+    q15.set_defaults(run=_q15)
 
     return parser
 

@@ -143,6 +143,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 11  | Vista agregada: ingresos totales por farmacéutico en el mes actual | `python -m farmared q11` | MongoDB (vista) | [`q11_pharmacist_income_current_month.py`](./farmared/services/q11_pharmacist_income_current_month.py)
 12  | Clientes sin ninguna venta registrada en el último año | `python -m farmared q12` | MongoDB | [`q12_customers_without_sales_last_year.py`](./farmared/services/q12_customers_without_sales_last_year.py)
 13  | ABM de clientes: alta (DNI único), modificación de contacto y cobertura, y baja lógica | `python -m farmared q13 alta ...` (ver abajo) | MongoDB | [`q13_customer_management.py`](./farmared/services/q13_customer_management.py)
+15  | Actualización masiva del stock de una venta registrada: FEFO, sin lotes vencidos, todo o nada | `python -m farmared q15 V118` | MongoDB (transacción) | [`q15_update_stock.py`](./farmared/services/q15_update_stock.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
@@ -173,7 +174,12 @@ El alta genera el identificador (`C111` es el primero libre después de la carga
 modificación acepta `--email`, `--telefono`, `--ciudad`, `--provincia`, `--obra-social` y
 `--nro-afiliado`, y cambia solo los que se indiquen.
 
-Las consultas 14 y 15 se agregan en los próximos commits.
+`q15` recibe una venta registrada y descuenta su stock en los lotes de la sucursal de la
+venta. Solo lo hace con una venta "Completada" que todavía no lo descontó; el registro de
+ventas (`q14`) la ejecuta dentro de su misma transacción. Imprime cada lote usado con sus
+unidades antes y después.
+
+La consulta 14 se agrega en el próximo commit.
 
 ### Coherencia entre Redis y MongoDB
 
