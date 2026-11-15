@@ -12,6 +12,7 @@ from pymongo import ASCENDING, IndexModel
 from pymongo.database import Database
 
 from farmared.adapters.mongo.documents import COUNTERS
+from farmared.adapters.mongo.queries import MONTHLY_INCOME_VIEW, monthly_income_pipeline
 from farmared.domain.enums import (
     BranchType,
     HealthInsurance,
@@ -211,3 +212,9 @@ def reset_schema(database: Database[dict[str, Any]]) -> None:
         database[COUNTERS].delete_many({})
     else:
         database.create_collection(COUNTERS)
+    # q11: the view stores no data, only its statement, which is refreshed here.
+    pipeline = monthly_income_pipeline()
+    if MONTHLY_INCOME_VIEW in existing:
+        database.command("collMod", MONTHLY_INCOME_VIEW, viewOn="ventas", pipeline=pipeline)
+    else:
+        database.create_collection(MONTHLY_INCOME_VIEW, viewOn="ventas", pipeline=pipeline)

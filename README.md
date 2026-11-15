@@ -140,9 +140,13 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 8   | Lotes con menos de 50 unidades, indicando producto, sucursal y proveedor | `python -m farmared q08` | MongoDB | [`q08_low_stock_batches.py`](./farmared/services/q08_low_stock_batches.py)
 9   | Ventas de tipo "Venta libre" con total menor a $5.000, sin las anuladas | `python -m farmared q09` | MongoDB | [`q09_small_over_the_counter_sales.py`](./farmared/services/q09_small_over_the_counter_sales.py)
 10  | Clientes atendidos en una sucursal dada, a través del farmacéutico que registró la venta (esté activo o no) | `python -m farmared q10 S002` | MongoDB | [`q10_customers_served_at_branch.py`](./farmared/services/q10_customers_served_at_branch.py)
+11  | Vista agregada: ingresos totales por farmacéutico en el mes actual | `python -m farmared q11` | MongoDB (vista) | [`q11_pharmacist_income_current_month.py`](./farmared/services/q11_pharmacist_income_current_month.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
+
+`q11` lee la vista `v_ingresos_farmaceutico_mes_actual`, que `make load` crea junto con las
+colecciones. La vista calcula el mes actual con el reloj de MongoDB, en hora de Argentina.
 
 `q07` lee el ranking que Redis mantiene con las unidades vendidas por producto. Ese ranking
 es un dato derivado de las ventas guardadas en MongoDB: la carga lo deja armado, y si falta

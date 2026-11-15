@@ -41,6 +41,9 @@ from farmared.services.q09_small_over_the_counter_sales import (
     small_over_the_counter_sales,
 )
 from farmared.services.q10_customers_served_at_branch import customers_served_at_branch
+from farmared.services.q11_pharmacist_income_current_month import (
+    pharmacist_income_current_month,
+)
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -93,6 +96,11 @@ def _q10(args: argparse.Namespace) -> None:
     print_result(f"q10 - Clientes atendidos en la sucursal {args.id_sucursal}", result)
 
 
+def _q11(args: argparse.Namespace) -> None:
+    result = pharmacist_income_current_month(get_database(), get_clock())
+    print_result("q11 - Ingresos por farmacéutico en el mes actual", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -140,6 +148,9 @@ def build_parser() -> argparse.ArgumentParser:
     q10 = commands.add_parser("q10", help="Clientes atendidos en una sucursal")
     q10.add_argument("id_sucursal", help="identificador de la sucursal, por ejemplo S002")
     q10.set_defaults(run=_q10)
+
+    q11 = commands.add_parser("q11", help="Ingresos por farmacéutico en el mes actual (vista)")
+    q11.set_defaults(run=_q11)
 
     return parser
 

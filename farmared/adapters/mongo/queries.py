@@ -4,15 +4,19 @@ Every function receives the database and returns plain dictionaries, with the bu
 identifier under its own name (`id_producto`) instead of `_id`.
 """
 
-from datetime import date
+from datetime import date, datetime, time
 from typing import Any
 
 from pymongo.database import Database
 
+from farmared.config import get_settings
 from farmared.dates import to_datetime
 from farmared.domain.enums import PrescriptionStatus, PrescriptionType, SaleStatus, SaleType
 
 Document = dict[str, Any]
+
+# q11 is published as a MongoDB view with this name (created with the schema).
+MONTHLY_INCOME_VIEW = "v_ingresos_farmaceutico_mes_actual"
 
 
 def active_products_with_supplier(database: Database[Document]) -> list[Document]:
@@ -468,3 +472,73 @@ def customers_served_at_branch(database: Database[Document], id_sucursal: str) -
         },
         "clientes": list(customers),
     }
+
+
+def monthly_income_pipeline(now: Any = "$$NOW") -> list[Document]:
+    """q11. The statement of the view: income per pharmacist in the current month.
+
+    `now` is the instant that decides which month is the current one. The view uses
+    `$$NOW`, the clock of the engine, so no date is fixed anywhere. The month is taken in
+    the time zone of Argentina: in UTC it would change at 21:00 of the last day.
+
+    A day is stored as its midnight, so the month goes from the midnight of its first day
+    (included) to the midnight of the first day of the next month (excluded). Only
+    completed sales compute income; logically deleted ones are left out.
+    """
+    timezone = get_settings().timezone
+    first_day = {
+        "$dateFromParts": {
+            "year": {"$year": {"date": now, "timezone": timezone}},
+            "month": {"$month": {"date": now, "timezone": timezone}},
+        }
+    }
+    next_first_day = {"$dateAdd": {"startDate": first_day, "unit": "month", "amount": 1}}
+    return [
+        {
+            "$match": {
+                "estado": SaleStatus.COMPLETED.value,
+                "activo": True,
+                "$expr": {
+                    "$and": [
+                        {"$gte": ["$fecha", first_day]},
+                        {"$lt": ["$fecha", next_first_day]},
+                    ]
+                },
+            }
+        },
+        {"$group": {"_id": "$id_farmaceutico", "ingresos": {"$sum": "$total"}}},
+        {
+            "$lookup": {
+                "from": "farmaceuticos",
+                "localField": "_id",
+                "foreignField": "_id",
+                "as": "farmaceutico",
+            }
+        },
+        {"$unwind": "$farmaceutico"},
+        {"$sort": {"ingresos": -1, "_id": 1}},
+        {
+            "$replaceWith": {
+                "id_farmaceutico": "$_id",
+                "nombre": "$farmaceutico.nombre",
+                "apellido": "$farmaceutico.apellido",
+                "matricula": "$farmaceutico.matricula",
+                "ingresos": "$ingresos",
+            }
+        },
+    ]
+
+
+def pharmacist_income_current_month(database: Database[Document]) -> list[Document]:
+    """q11. Reads the view: the current month is decided by the clock of the engine."""
+    return list(database[MONTHLY_INCOME_VIEW].find())
+
+
+def pharmacist_income_in_month_of(database: Database[Document], day: date) -> list[Document]:
+    """q11 for the month of a given day: the statement of the view with that day as "now".
+
+    A view cannot receive a date, so this is how tests and demos with a fixed clock run
+    the same statement. Noon is used so the day is the same in UTC and in Argentina.
+    """
+    noon = datetime.combine(day, time(12))
+    return list(database.ventas.aggregate(monthly_income_pipeline(noon)))

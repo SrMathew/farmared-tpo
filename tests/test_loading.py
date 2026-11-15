@@ -155,7 +155,8 @@ def test_a_broken_rule_aborts_the_load(tmp_path, file, old, new, expected):
 def snapshot(database) -> dict:
     return {
         name: sorted(database[name].find(), key=lambda d: str(d["_id"]))
-        for name in sorted(database.list_collection_names())
+        # Views (q11) store no data, so they are not part of the stored state.
+        for name in sorted(database.list_collection_names(filter={"type": "collection"}))
     }
 
 
