@@ -17,7 +17,7 @@ def test_mongodb_is_a_replica_set():
 def test_mongodb_database_uses_majority_concerns():
     database = get_database()
 
-    assert database.name == "farmared"
+    assert database.name == "farmared_test"  # the test session uses its own database
     assert database.write_concern.document == {"w": "majority"}
     assert database.read_concern.level == "majority"
 

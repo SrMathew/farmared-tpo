@@ -1,13 +1,23 @@
-"""Fixtures shared by every test."""
+"""Fixtures shared by every test.
 
+The whole test session works on its own MongoDB database and its own Redis key prefix, so
+running the tests never touches the data loaded with `make load`.
+"""
+
+import os
 from datetime import date
+from pathlib import Path
 
 import pytest
 
-from farmared.config import get_settings
+os.environ["MONGO_DB"] = "farmared_test"
+os.environ["REDIS_PREFIX"] = "frtest:"
+
+from farmared.config import get_settings  # noqa: E402
 
 # "Today" for every test that uses loaded data.
 TODAY = date(2026, 11, 15)
+DATA = Path(__file__).resolve().parents[1] / "data"
 
 
 @pytest.fixture(autouse=True)
@@ -18,28 +28,28 @@ def fresh_settings():
     get_settings.cache_clear()
 
 
-@pytest.fixture
-def database(monkeypatch):
-    """An empty MongoDB database with the project schema, separate from the loaded data.
-
-    Integration tests write here, so running them never touches the `farmared` database.
-    Redis keys get their own prefix for the same reason.
-    """
+@pytest.fixture(scope="session")
+def _test_database():
+    """The test database, dropped once when the whole session ends."""
     from farmared.adapters.mongo.connection import get_client, get_database
-    from farmared.adapters.mongo.schema import reset_schema
 
-    monkeypatch.setenv("MONGO_DB", "farmared_test")
-    monkeypatch.setenv("REDIS_PREFIX", "frtest:")
     get_settings.cache_clear()
-    db = get_database()
-    reset_schema(db)
-    yield db
+    yield get_database()
     get_client().drop_database("farmared_test")
 
 
 @pytest.fixture
-def redis_client(database):
-    """Redis, with the system keys under a test prefix that is emptied before and after."""
+def database(_test_database):
+    """An empty database with the project schema. For tests that write."""
+    from farmared.adapters.mongo.schema import reset_schema
+
+    reset_schema(_test_database)
+    return _test_database
+
+
+@pytest.fixture
+def redis_client():
+    """Redis, with the system keys under the test prefix emptied before and after."""
     from farmared.adapters.redis.connection import get_redis
     from farmared.loading.writer import clear_derived_data
 
@@ -49,16 +59,19 @@ def redis_client(database):
     clear_derived_data(client)
 
 
-@pytest.fixture
-def loaded(database, redis_client):
-    """The test database with the course data and the additional records loaded.
+@pytest.fixture(scope="module")
+def loaded(_test_database):
+    """The database with the course data and the additional records, loaded once per module.
+
+    For the read queries, which do not modify MongoDB: loading once instead of before every
+    test keeps the test run light. Do not combine it with `database`, which empties it.
 
     The clock is fixed, so the relative dates of the additional records (HOY-30) and every
     query that depends on "today" give the same result on any day the tests run.
     """
-    from pathlib import Path
-
+    from farmared.adapters.redis.connection import get_redis
     from farmared.loading.loader import load_data
 
-    load_data(database, redis_client, Path(__file__).resolve().parents[1] / "data", TODAY)
-    return database
+    get_settings.cache_clear()
+    load_data(_test_database, get_redis(), DATA, TODAY)
+    return _test_database

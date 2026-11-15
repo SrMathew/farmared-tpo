@@ -20,7 +20,9 @@ services:
   mongo:
     image: mongo:8.0
     # Single-node replica set: required for multi-document transactions (q14 + q15).
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+    # The cache is capped so MongoDB leaves memory for the rest of the dev container.
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "1"]
+    restart: unless-stopped   # if the engine ever stops, Docker starts it again
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -38,6 +40,7 @@ services:
     # Redis only holds data derived from MongoDB (cache, ranking, idempotency keys), all of
     # it rebuildable, so the default AOF policy (fsync every second) is enough.
     command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
     volumes:
       - redis-data:/data
     healthcheck:
