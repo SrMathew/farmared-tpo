@@ -196,9 +196,7 @@ def register_sale(
         _, pharmacist, branch, products = checked_parties(
             store, id_cliente, id_farmaceutico, product_ids
         )
-        prescription = checked_prescription(
-            store, id_receta, id_cliente, products.values(), today
-        )
+        prescription = checked_prescription(store, id_receta, id_cliente, products.values(), today)
 
         id_venta, item_ids = store.next_sale_ids(len(items))
         lines = [

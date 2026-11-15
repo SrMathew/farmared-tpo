@@ -43,8 +43,7 @@ def apply_stock(store: StockStore, id_venta: str, today: date) -> dict[str, Any]
         raise BusinessRuleError(f"La venta {id_venta} está dada de baja")
     if not has_economic_effect(sale):
         raise BusinessRuleError(
-            f"La venta {id_venta} está '{sale.estado}': "
-            "solo una venta 'Completada' descuenta stock"
+            f"La venta {id_venta} está '{sale.estado}': solo una venta 'Completada' descuenta stock"
         )
     if sale.stock_aplicado:
         raise BusinessRuleError(f"La venta {id_venta} ya descontó su stock")

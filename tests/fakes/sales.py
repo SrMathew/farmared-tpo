@@ -3,7 +3,6 @@
 from collections.abc import Mapping
 
 from fakes.stock import InMemoryStore
-
 from farmared.domain.models import (
     Batch,
     Branch,

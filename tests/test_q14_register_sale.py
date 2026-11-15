@@ -318,8 +318,6 @@ def test_a_rejected_request_can_be_sent_again_with_the_same_key(store, ranking):
     assert result["venta"]["id_venta"] == "V001"
 
 
-
-
 # --- Against MongoDB and Redis ----------------------------------------------------------
 
 
