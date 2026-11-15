@@ -1,0 +1,11 @@
+id_cliente,nombre,apellido,dni,email,telefono,ciudad,provincia,obra_social,nro_afiliado,activo
+C101,Valeria,Ocampo,40111222,valeria.ocampo@mail.com,221-5001001,La Plata,Buenos Aires,OSDE,OS-401112,True
+C102,Gonzalo,Funes,27222333,gonzalo.funes@mail.com,341-5001002,Rosario,Santa Fe,PAMI,PA-272223,True
+C103,Sofía,Arce,42333444,sofia.arce@mail.com,351-5001003,Córdoba,Córdoba,Sin cobertura,,True
+C104,Diego,Torres,31444555,diego.torres@mail.com,223-5001004,Mar del Plata,Buenos Aires,IOMA,IO-314445,True
+C105,Valentina,Díaz,43555666,valentina.diaz@mail.com,221-5001005,Quilmes,Buenos Aires,Swiss Medical,SM-435556,True
+C106,Joaquín,Ríos,39666777,joaquin.rios@mail.com,342-5001006,Santa Fe,Santa Fe,Galeno,GA-396667,True
+C107,Camila,Herrera,41777888,camila.herrera@mail.com,351-5001007,Villa María,Córdoba,Sin cobertura,,True
+C108,Tomás,Medina,29888999,tomas.medina@mail.com,221-5001008,Berisso,Buenos Aires,OSDE,OS-298889,True
+C109,Agustina,Paz,24999000,agustina.paz@mail.com,341-5001009,Rosario,Santa Fe,PAMI,PA-249990,True
+C110,Bruno,Sosa,36000111,bruno.sosa@mail.com,223-5001010,Tandil,Buenos Aires,IOMA,IO-360001,False

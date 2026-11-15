@@ -6,6 +6,7 @@ other value has a default, so the project runs without any extra setup.
 
 from datetime import date
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,6 +27,9 @@ class Settings(BaseSettings):
     timezone: str = "America/Argentina/Buenos_Aires"
     # FARMARED_TODAY (YYYY-MM-DD) overrides the system date. Only for reproducible tests and demos.
     farmared_today: date | None = None
+
+    # Folder with the CSV datasets: `given` (course) and `added` (team).
+    data_dir: Path = Path(__file__).resolve().parents[1] / "data"
 
     log_level: str = "INFO"
 

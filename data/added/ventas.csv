@@ -1,0 +1,18 @@
+id_venta,id_cliente,id_farmaceutico,id_receta,fecha,tipo,medio_pago,total,estado,activo
+V101,C101,F101,RC101,HOY-35,Con receta,Obra social,8400,Completada,True
+V102,C101,F102,,HOY-3,Venta libre,Débito,11000,Completada,True
+V103,C102,F103,,HOY-1,Venta libre,Efectivo,14500,Completada,True
+V104,C103,F101,,HOY-10,Venta libre,Efectivo,3200,Completada,True
+V105,C104,F104,RC106,HOY-20,Con receta,Obra social,9900,Completada,True
+V106,C108,F105,,HOY,Venta libre,Transferencia,6500,Pendiente,True
+V107,C109,F101,RC108,HOY-15,Con receta,Obra social,11200,Completada,True
+V108,C107,F103,,HOY-400,Venta libre,Efectivo,3200,Completada,True
+V109,C102,F102,,HOY-120,Venta libre,Crédito,11700,Completada,True
+V110,C103,F102,,HOY-5,Venta libre,Efectivo,3900,Anulada,True
+V111,C101,F101,,HOY,Venta libre,Crédito,20900,Completada,True
+V112,C108,F106,,HOY-2,Venta libre,Débito,3200,Pendiente,True
+V113,C102,F103,RC103,HOY-150,Con receta,Obra social,9900,Completada,True
+V114,C102,F103,RC103,HOY-120,Con receta,Obra social,9900,Completada,True
+V115,C102,F103,RC103,HOY-90,Con receta,Obra social,9900,Completada,True
+V116,C104,F104,RC106,HOY-50,Con receta,Obra social,9900,Completada,True
+V117,C105,F101,,HOY-8,Venta libre,Efectivo,3900,Completada,False

@@ -1,0 +1,11 @@
+id_farmaceutico,nombre,apellido,matricula,cargo,id_sucursal,activo
+F101,Mariana,Paredes,MP-40101,Director Técnico,S101,True
+F102,Ezequiel,Ortiz,MP-40102,Farmacéutico,S101,True
+F103,Julieta,Campos,MP-40103,Director Técnico,S102,True
+F104,Ramiro,Aguirre,MP-40104,Director Técnico,S103,True
+F105,Carolina,Peralta,MP-40105,Director Técnico,S104,True
+F106,Leandro,Godoy,MP-40106,Director Técnico,S105,True
+F107,Daniela,Figueroa,MP-40107,Director Técnico,S106,True
+F108,Gustavo,Ponce,MP-40108,Farmacéutico,S101,False
+F109,Verónica,Rojas,MP-40109,Director Técnico,S109,True
+F110,Nicolás,Cabrera,MP-40110,Director Técnico,S107,True

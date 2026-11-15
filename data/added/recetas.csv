@@ -1,0 +1,12 @@
+id_receta,id_cliente,medico,matricula_medico,fecha_emision,tipo,dispensas_autorizadas,dispensas_realizadas,proxima_dispensa,estado,activo
+RC101,C101,Dr. Martín Sala,MN-60101,HOY-36,Tratamiento prolongado,3,1,HOY-5,Vigente,True
+RC102,C101,Dr. Martín Sala,MN-60101,HOY-2,Simple,1,0,,Vigente,True
+RC103,C102,Dra. Elena Bravo,MP-60102,HOY-150,Tratamiento prolongado,3,3,,Completada,True
+RC104,C102,Dra. Elena Bravo,MP-60102,HOY-60,Simple,1,0,,Vencida,True
+RC105,C104,Dr. Raúl Méndez,MN-60103,HOY-4,Archivada,1,0,,Vigente,True
+RC106,C104,Dr. Raúl Méndez,MN-60103,HOY-80,Tratamiento prolongado,3,2,HOY+10,Vigente,True
+RC107,C108,Dra. Silvia Lagos,MP-60104,HOY-7,Tratamiento prolongado,3,0,,Vigente,True
+RC108,C109,Dra. Silvia Lagos,MP-60104,HOY-16,Simple,1,1,,Completada,True
+RC109,C103,Dr. Martín Sala,MN-60101,HOY-90,Simple,1,0,,Vencida,True
+RC110,C101,Dr. Raúl Méndez,MN-60103,HOY-1,Archivada,1,0,,Vigente,True
+RC111,C101,Dr. Martín Sala,MN-60101,HOY-3,Simple,1,0,,Vigente,False

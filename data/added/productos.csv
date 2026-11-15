@@ -1,0 +1,11 @@
+id_producto,nombre,principio_activo,categoria,presentacion,condicion_venta,precio_unit,id_proveedor,activo
+PRD101,Ibuprofeno 600 mg x 10,Ibuprofeno,Antiinflamatorio,Comprimidos x 10,Venta libre,3900,PRV101,True
+PRD102,Cefalexina 500 mg x 16,Cefalexina,Antibiótico,Cápsulas x 16,Bajo receta,11200,PRV102,True
+PRD103,Losartán 50 mg x 30,Losartán,Antihipertensivo,Comprimidos x 30,Bajo receta,8400,PRV103,True
+PRD104,"Alprazolam 0,5 mg x 30",Alprazolam,Ansiolítico,Comprimidos x 30,Bajo receta archivada,9600,PRV104,True
+PRD105,Salbutamol aerosol 100 mcg,Salbutamol,Broncodilatador,Aerosol 200 dosis,Bajo receta,7800,PRV105,True
+PRD106,Vitamina C 1 g x 10,Ácido ascórbico,Suplemento,Comprimidos efervescentes x 10,Venta libre,3200,PRV106,True
+PRD107,Protector solar FPS 50 200 ml,Octocrileno,Dermocosmética,Emulsión 200 ml,Venta libre,14500,PRV107,True
+PRD108,Pantoprazol 40 mg x 28,Pantoprazol,Antiácido,Comprimidos x 28,Bajo receta,9900,PRV108,True
+PRD109,Termómetro digital,N/A,Insumo médico,Unidad,Venta libre,6500,PRV109,True
+PRD110,Ranitidina 150 mg x 20,Ranitidina,Antiácido,Comprimidos x 20,Bajo receta,4100,PRV110,False

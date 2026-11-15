@@ -1,4 +1,4 @@
-.PHONY: help install check lint format typecheck test test-unit test-integration
+.PHONY: help install check load lint format typecheck test test-unit test-integration
 
 help:              ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -8,6 +8,9 @@ install:           ## Install the package and the dev tools (the dev container d
 
 check:             ## Check that MongoDB (replica set) and Redis are reachable
 	python scripts/check_environment.py
+
+load:              ## Validate and load the CSV datasets into MongoDB (idempotent)
+	python scripts/load_data.py
 
 lint:              ## Lint and check formatting with ruff
 	ruff check .

@@ -85,7 +85,37 @@ Redis:   OK
 
 ## 📥 Carga de Datos 📥
 
-Los datasets provistos por la cátedra están en `data/given/`.
+En la terminal del dev container:
+
+```bash
+make load
+```
+
+La carga es la migración del sistema anterior. Lee dos carpetas:
+
+Carpeta        | Contenido
+---------------|------------------------------------------------------------------
+`data/given/`  | Los 9 datasets CSV provistos por la cátedra, sin modificar
+`data/added/`  | Los registros adicionales propios: 10 o más por dataset, con IDs desde 101
+
+Antes de escribir valida todos los datos contra las reglas de negocio (claves foráneas,
+condición de venta, dispensas de las recetas, totales, sucursales, stock). Si alguna regla
+no se cumple, muestra todos los problemas, no escribe nada y termina con error.
+
+La carga es **reproducible e idempotente**: recrea las colecciones de MongoDB con sus
+validadores e índices, así que ejecutarla otra vez deja exactamente el mismo estado. También
+borra los datos derivados de Redis, que se regeneran a partir de MongoDB.
+
+Los registros adicionales usan fechas relativas a la fecha del sistema (`HOY-30`, `HOY+90`),
+para que sus casos borde (lotes por vencer, recetas atrasadas, ventas del mes) sigan siendo
+válidos cualquier día en que se ejecute la carga.
+
+Al terminar informa cuántos documentos cargó por colección y tres observaciones sobre los
+datos de la cátedra, que se cargan tal cual:
+
+* `V001` fue registrada por `F004` y `V014` incluye `PRD012`, que hoy están inactivos. Los
+  datos no traen fecha de baja, así que no se puede saber si lo estaban el día de la venta.
+* En `RC002` la próxima dispensa está a 31 días de la última, y no a 30.
 
 ## 🔎 Consultas 🔎
 
@@ -97,6 +127,7 @@ Comando                 | Qué hace
 ------------------------|------------------------------------------------------
 `make help`             | Lista los comandos disponibles
 `make check`            | Verifica que MongoDB (replica set) y Redis respondan
+`make load`             | Valida y carga los datasets en MongoDB
 `make test`             | Corre todos los tests
 `make test-unit`        | Corre los tests que no necesitan los motores
 `make test-integration` | Corre los tests contra MongoDB y Redis
@@ -110,9 +141,10 @@ Comando                 | Qué hace
 .devcontainer/   Definición del entorno: contenedores app, mongo y redis
 assets/          Imágenes del README
 data/given/      Datasets CSV provistos por la cátedra
+data/added/      Registros adicionales propios
 docs/            Enunciado e informe
 farmared/        Paquete Python del sistema
-scripts/         Puntos de entrada ejecutables (por ahora, check_environment.py)
+scripts/         Puntos de entrada ejecutables: check_environment.py y load_data.py
 tests/           Tests (pytest)
 pyproject.toml   Dependencias y configuración de las herramientas
 Makefile         Atajos para los comandos habituales

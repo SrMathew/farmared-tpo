@@ -1,0 +1,11 @@
+id_sucursal,nombre,tipo,direccion,ciudad,provincia,telefono,activo
+S101,FarmaRed City Bell,Farmacia,Cantilo 500,City Bell,Buenos Aires,221-4800101,True
+S102,FarmaRed Funes,Farmacia,Av. Galicia 1200,Funes,Santa Fe,341-4800102,True
+S103,FarmaRed Nueva Córdoba,Farmacia,Obispo Trejo 900,Córdoba,Córdoba,351-4800103,True
+S104,FarmaRed Tandil,Farmacia,Pinto 650,Tandil,Buenos Aires,249-4800104,True
+S105,FarmaRed Santa Fe Centro,Farmacia,San Martín 2400,Santa Fe,Santa Fe,342-4800105,True
+S106,FarmaRed Villa Carlos Paz,Farmacia,Av. San Martín 300,Villa Carlos Paz,Córdoba,3541-480106,True
+S107,FarmaRed Bahía Blanca,Farmacia,Alsina 150,Bahía Blanca,Buenos Aires,291-4800107,True
+S108,FarmaRed Rafaela,Farmacia,Bv. Santa Fe 800,Rafaela,Santa Fe,3492-480108,True
+S109,Droguería FarmaRed Córdoba,Droguería,Ruta 9 km 695,Córdoba,Córdoba,351-4800109,True
+S110,FarmaRed Junín (cerrada),Farmacia,Rivadavia 100,Junín,Buenos Aires,236-4800110,False

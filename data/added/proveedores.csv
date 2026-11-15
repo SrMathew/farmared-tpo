@@ -1,0 +1,11 @@
+id_proveedor,razon_social,cuit,tipo,ciudad,provincia,telefono,activo
+PRV101,Laboratorio Austral S.A.,30-72000101-1,Laboratorio,CABA,Buenos Aires,11-46000101,True
+PRV102,Lab. Cuyo Farma S.A.,30-72000102-2,Laboratorio,Mendoza,Mendoza,261-4600102,True
+PRV103,Química Litoral S.A.,30-72000103-3,Laboratorio,Santa Fe,Santa Fe,342-4600103,True
+PRV104,Neurofarma S.A.,30-72000104-4,Laboratorio,CABA,Buenos Aires,11-46000104,True
+PRV105,Respira Lab S.R.L.,30-72000105-5,Laboratorio,Córdoba,Córdoba,351-4600105,True
+PRV106,Nutrivital S.A.,30-72000106-6,Laboratorio,Rosario,Santa Fe,341-4600106,True
+PRV107,Dermocosmética Sur S.A.,30-72000107-7,Laboratorio,La Plata,Buenos Aires,221-4600107,True
+PRV108,Droguería Centro S.A.,30-72000108-8,Droguería,Córdoba,Córdoba,351-4600108,True
+PRV109,Insumos Médicos del Plata S.A.,30-72000109-9,Droguería,Avellaneda,Buenos Aires,11-46000109,True
+PRV110,Laboratorio Ocaso S.A.,30-72000110-0,Laboratorio,Tigre,Buenos Aires,11-46000110,False
