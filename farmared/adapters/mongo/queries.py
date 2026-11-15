@@ -328,3 +328,60 @@ def completed_sale_ids(database: Database[Document]) -> list[str]:
 def product_names(database: Database[Document], product_ids: list[str]) -> dict[str, str]:
     products = database.productos.find({"_id": {"$in": product_ids}}, {"nombre": 1})
     return {product["_id"]: product["nombre"] for product in products}
+
+
+def _lookup_one(collection: str, local_field: str, alias: str) -> list[Document]:
+    """Stages that bring the single document `local_field` references, as `alias`."""
+    return [
+        {
+            "$lookup": {
+                "from": collection,
+                "localField": local_field,
+                "foreignField": "_id",
+                "as": alias,
+            }
+        },
+        {"$unwind": f"${alias}"},
+    ]
+
+
+def low_stock_batches(database: Database[Document], below: int) -> list[Document]:
+    """q08. Batches with fewer than `below` units, with product, branch and supplier.
+
+    Three references are followed with $lookup: the batch points to its product and its
+    branch, and the product points to its supplier (a two-step path:
+    lotes.id_producto -> productos.id_proveedor -> proveedores).
+    The filter uses the index lotes {unidades}.
+    """
+    return list(
+        database.lotes.aggregate(
+            [
+                {"$match": {"unidades": {"$lt": below}, "activo": True}},
+                *_lookup_one("productos", "id_producto", "producto"),
+                *_lookup_one("proveedores", "producto.id_proveedor", "proveedor"),
+                *_lookup_one("sucursales", "id_sucursal", "sucursal"),
+                {"$sort": {"unidades": 1, "_id": 1}},
+                {
+                    "$replaceWith": {
+                        "id_lote": "$_id",
+                        "nro_lote": "$nro_lote",
+                        "unidades": "$unidades",
+                        "vencimiento": "$vencimiento",
+                        "producto": {
+                            "id_producto": "$producto._id",
+                            "nombre": "$producto.nombre",
+                        },
+                        "sucursal": {
+                            "id_sucursal": "$sucursal._id",
+                            "nombre": "$sucursal.nombre",
+                            "tipo": "$sucursal.tipo",
+                        },
+                        "proveedor": {
+                            "id_proveedor": "$proveedor._id",
+                            "razon_social": "$proveedor.razon_social",
+                        },
+                    }
+                },
+            ]
+        )
+    )
