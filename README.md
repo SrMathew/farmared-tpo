@@ -8,9 +8,9 @@
 * Fecha de entrega: a definir por la cátedra
 * Fecha de defensa: a definir por la cátedra
 
-## Grupo N
+## Grupo 13
 
-* **LEGAJO**: **Apellido**, Nombre
+* **62722**: **Cornejo**, Mateo
 
 Trabajo realizado de forma individual, por excepción de la cátedra.
 
@@ -19,15 +19,11 @@ Trabajo realizado de forma individual, por excepción de la cátedra.
 En el directorio `docs` se encuentran los siguientes documentos:
 
 * [`TPO_FarmaRed.pdf`](./docs/consigna/TPO_FarmaRed.pdf) - Enunciado del trabajo práctico.
-* `Informe.pdf` - Informe de entrega: arquitectura políglota, modelo de datos, estrategia de
-  carga, las 15 consultas, decisiones de consistencia e integridad, limitaciones y
-  conclusiones. Se agrega con la entrega.
+* `Informe.pdf` - Informe de entrega: arquitectura políglota, modelo de datos, estrategia de carga, las 15 consultas, decisiones de consistencia e integridad, limitaciones y conclusiones. Se agrega con la entrega.
 
 ## 🧩 Arquitectura 🧩
 
-Sistema de backoffice para FarmaRed S.A., una red de farmacias con droguería propia. Gestiona
-clientes, sucursales, farmacéuticos, proveedores, catálogo de productos, stock por lote,
-recetas y ventas, con una arquitectura de **persistencia políglota**. El código está en
+Sistema de backoffice para FarmaRed S.A., una red de farmacias con droguería propia. Gestiona clientes, sucursales, farmacéuticos, proveedores, catálogo de productos, stock por lote, recetas y ventas, con una arquitectura de **persistencia políglota**. El código está en
 **Python 3.12**.
 
 Motor                               | Paradigma   | Rol
@@ -35,9 +31,6 @@ Motor                               | Paradigma   | Rol
 **MongoDB 8** (replica set `rs0`)   | Documentos  | Único sistema de registro: todas las entidades, incluido el stock por lote
 **Redis 7.4**                       | Clave-valor | Datos derivados de MongoDB: caché del catálogo, ranking de productos y claves de idempotencia
 
-> **Estado:** en desarrollo. Hoy el repositorio contiene el entorno, los datasets de la
-> cátedra y las herramientas de calidad. La carga de datos y las 15 consultas se agregan en
-> los próximos commits, y este README se actualiza con cada una.
 
 ## 🌐 Servicios 🌐
 
