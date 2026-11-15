@@ -6,6 +6,7 @@
     python -m farmared q04
     python -m farmared q05
     python -m farmared q06
+    python -m farmared q07 [--limit 5]
 
 This is the only place that creates the connections and hands them to the services.
 """
@@ -16,6 +17,7 @@ import sys
 from farmared.adapters.mongo.connection import get_database
 from farmared.adapters.redis.catalog_cache import CatalogCache
 from farmared.adapters.redis.connection import get_redis
+from farmared.adapters.redis.product_ranking import ProductRanking
 from farmared.clock import get_clock
 from farmared.config import get_settings
 from farmared.domain.errors import BusinessRuleError
@@ -30,6 +32,7 @@ from farmared.services.q05_pharmacist_sales_last_60_days import pharmacist_sales
 from farmared.services.q06_overdue_long_term_prescriptions import (
     overdue_long_term_prescriptions,
 )
+from farmared.services.q07_top_products import TOP, top_products
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -62,6 +65,11 @@ def _q06(args: argparse.Namespace) -> None:
     print_result("q06 - Tratamientos prolongados con dispensa atrasada", result)
 
 
+def _q07(args: argparse.Namespace) -> None:
+    result = top_products(get_database(), ProductRanking(get_redis()), args.limit)
+    print_result(f"q07 - Top {args.limit} productos más vendidos", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -87,6 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     q06 = commands.add_parser("q06", help="Tratamientos prolongados vigentes con dispensa atrasada")
     q06.set_defaults(run=_q06)
+
+    q07 = commands.add_parser("q07", help="Productos más vendidos en unidades")
+    q07.add_argument("--limit", type=int, default=TOP, help="cuántos listar (por defecto 5)")
+    q07.set_defaults(run=_q07)
 
     return parser
 

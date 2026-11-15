@@ -9,10 +9,12 @@ from typing import Any
 from pymongo.database import Database
 from redis import Redis
 
+from farmared.adapters.redis.product_ranking import ProductRanking
 from farmared.domain.errors import BusinessRuleError
 from farmared.loading.reader import Dataset, read_dataset
 from farmared.loading.validation import validate
 from farmared.loading.writer import clear_derived_data, write_dataset
+from farmared.services.redis_sync import rebuild_product_ranking
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,9 @@ def load_data(
     """
     dataset, observations = read_and_validate([data_dir / "given", data_dir / "added"], today)
     counts = write_dataset(database, dataset)
+    # Redis only holds data derived from MongoDB: drop what described the previous contents
+    # and rebuild it from what was just loaded, so both engines say the same.
     deleted = clear_derived_data(redis)
-    logger.info("Loaded %s; %d derived Redis keys cleared", counts, deleted)
+    rebuild_product_ranking(database, ProductRanking(redis))
+    logger.info("Loaded %s; %d derived Redis keys replaced", counts, deleted)
     return LoadReport(counts, observations)

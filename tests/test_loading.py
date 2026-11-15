@@ -234,3 +234,15 @@ def test_load_clears_the_data_redis_derives_from_mongodb(database, redis_client)
     assert redis_client.exists(key("cache", "q01")) == 0
     assert redis_client.get("otra-aplicacion") == "intacta"
     redis_client.delete("otra-aplicacion")
+
+
+@pytest.mark.integration
+def test_load_leaves_the_product_ranking_in_redis_matching_mongodb(database, redis_client):
+    from farmared.adapters.redis.product_ranking import ProductRanking
+    from farmared.services.redis_sync import product_ranking_differences
+
+    load_data(database, redis_client, DATA, TODAY)
+
+    ranking = ProductRanking(redis_client)
+    assert product_ranking_differences(database, ranking) == []
+    assert len(ranking.counted_sales()) == 26  # completed and not logically deleted

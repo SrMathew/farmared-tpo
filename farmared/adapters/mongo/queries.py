@@ -300,3 +300,31 @@ def overdue_long_term_prescriptions(database: Database[Document], today: date) -
             ]
         )
     )
+
+
+def units_sold_by_product(database: Database[Document]) -> dict[str, int]:
+    """q07, source of truth. Units sold per product, counting only completed sales.
+
+    Items are embedded in the sale: $unwind opens one document per item and $group adds the
+    quantities per product. No join is needed.
+    """
+    rows = database.ventas.aggregate(
+        [
+            {"$match": {"estado": SaleStatus.COMPLETED.value, "activo": True}},
+            {"$unwind": "$items"},
+            {"$group": {"_id": "$items.id_producto", "unidades": {"$sum": "$items.cantidad"}}},
+            {"$sort": {"unidades": -1, "_id": 1}},
+        ]
+    )
+    return {row["_id"]: row["unidades"] for row in rows}
+
+
+def completed_sale_ids(database: Database[Document]) -> list[str]:
+    """Identifiers of the sales that count in the product ranking."""
+    sales = database.ventas.find({"estado": SaleStatus.COMPLETED.value, "activo": True}, {"_id": 1})
+    return [sale["_id"] for sale in sales]
+
+
+def product_names(database: Database[Document], product_ids: list[str]) -> dict[str, str]:
+    products = database.productos.find({"_id": {"$in": product_ids}}, {"nombre": 1})
+    return {product["_id"]: product["nombre"] for product in products}
