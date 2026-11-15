@@ -102,7 +102,7 @@ Antes de escribir valida todos los datos contra las reglas de negocio (claves fo
 condición de venta, dispensas de las recetas, totales, sucursales, stock). Si alguna regla
 no se cumple, muestra todos los problemas, no escribe nada y termina con error.
 
-La carga es **reproducible e idempotente**: recrea las colecciones de MongoDB con sus
+La carga es **reproducible e idempotente**: vacía las colecciones de MongoDB y les aplica sus
 validadores e índices, así que ejecutarla otra vez deja exactamente el mismo estado. También
 borra los datos derivados de Redis, que se regeneran a partir de MongoDB.
 

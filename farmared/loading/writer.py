@@ -35,7 +35,7 @@ _SEQUENCES: dict[type[Entity], Sequence] = {
 
 
 def write_dataset(database: Database[dict[str, Any]], dataset: Dataset) -> dict[str, int]:
-    """Recreate the collections and store the dataset. Returns the documents per collection.
+    """Empty the collections and store the dataset. Returns the documents per collection.
 
     Starting from empty collections is what makes the load idempotent: running it again
     leaves exactly the same state.

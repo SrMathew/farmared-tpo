@@ -24,13 +24,12 @@ def test_mongodb_database_uses_majority_concerns():
 
 def test_mongodb_supports_multi_document_transactions():
     collection = get_database()["_transaction_check"]
-    collection.drop()
+    collection.delete_many({})
     with get_client().start_session() as session, session.start_transaction():
         collection.insert_one({"_id": 1}, session=session)
         session.abort_transaction()
 
     assert collection.count_documents({}) == 0
-    collection.drop()
 
 
 def test_redis_responds():

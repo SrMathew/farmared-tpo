@@ -30,12 +30,15 @@ def fresh_settings():
 
 @pytest.fixture(scope="session")
 def _test_database():
-    """The test database, dropped once when the whole session ends."""
-    from farmared.adapters.mongo.connection import get_client, get_database
+    """The test database. It is kept between runs and emptied by the tests that need it.
+
+    It is never dropped: dropping a database and creating its collections again right away
+    is the one thing every MongoDB crash seen in the dev container had in common.
+    """
+    from farmared.adapters.mongo.connection import get_database
 
     get_settings.cache_clear()
-    yield get_database()
-    get_client().drop_database("farmared_test")
+    return get_database()
 
 
 @pytest.fixture

@@ -189,15 +189,25 @@ INDEXES: dict[str, list[IndexModel]] = {
 
 
 def reset_schema(database: Database[dict[str, Any]]) -> None:
-    """Recreate every collection, empty, with its validator and indexes.
+    """Leave every collection empty, with its validator and indexes in place.
 
     This is the environment reset the data load starts from, which makes the load
     reproducible. It is not a business operation: the services never delete anything.
+
+    Existing collections are emptied and their validator refreshed instead of being dropped
+    and created again: the result is the same and the engine does far less work, which
+    matters when the tests reset the database many times in a row.
     """
+    existing = set(database.list_collection_names())
     for name, validator in VALIDATORS.items():
-        database.drop_collection(name)
-        collection = database.create_collection(name, validator=validator)
+        if name in existing:
+            database[name].delete_many({})
+            database.command("collMod", name, validator=validator)
+        else:
+            database.create_collection(name, validator=validator)
         if name in INDEXES:
-            collection.create_indexes(INDEXES[name])
-    database.drop_collection(COUNTERS)
-    database.create_collection(COUNTERS)
+            database[name].create_indexes(INDEXES[name])  # no-op when they already exist
+    if COUNTERS in existing:
+        database[COUNTERS].delete_many({})
+    else:
+        database.create_collection(COUNTERS)
