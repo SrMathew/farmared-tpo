@@ -26,6 +26,9 @@ def test_period_is_the_60_days_before_the_system_date(loaded):
 def test_counts_the_sales_of_each_active_pharmacist(loaded):
     result = pharmacist_sales_last_60_days(loaded, FixedClock(TODAY))
 
+    # Exactly the active pharmacists (F004 and F108 are inactive), the ones without sales
+    # with zero (F007 works at the wholesaler). Cancelled sales (V015, of F002) and
+    # logically deleted ones (V117, of F101) do not count; pending ones do (V011, of F006).
     assert counts(result) == {
         "F101": 4,
         "F005": 3,
@@ -57,32 +60,6 @@ def test_result_is_ordered_by_number_of_sales(loaded):
         "id_sucursal": "S101",
         "cantidad_ventas": 4,
     }
-
-
-def test_pharmacists_without_sales_appear_with_zero(loaded):
-    result = counts(pharmacist_sales_last_60_days(loaded, FixedClock(TODAY)))
-
-    assert result["F007"] == 0  # works at the warehouse, which registers no sales
-
-
-def test_inactive_pharmacists_are_left_out(loaded):
-    result = counts(pharmacist_sales_last_60_days(loaded, FixedClock(TODAY)))
-
-    assert "F004" not in result and "F108" not in result
-
-
-def test_cancelled_and_logically_deleted_sales_do_not_count(loaded):
-    result = counts(pharmacist_sales_last_60_days(loaded, FixedClock(TODAY)))
-
-    # F002: V008 and V016 count; V015 (cancelled, 2026-09-25) does not.
-    assert result["F002"] == 2
-    # F101: V117 (2026-11-07) is logically deleted.
-    assert result["F101"] == 4
-
-
-def test_pending_sales_count(loaded):
-    # F006 only has V011, pending.
-    assert counts(pharmacist_sales_last_60_days(loaded, FixedClock(TODAY)))["F006"] == 1
 
 
 def test_the_period_moves_with_the_date(loaded):

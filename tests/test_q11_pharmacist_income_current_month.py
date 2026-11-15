@@ -24,6 +24,8 @@ def income(result: dict) -> list[tuple[str, int]]:
 def test_adds_the_completed_sales_of_the_month_per_pharmacist(loaded):
     result = pharmacist_income_current_month(loaded, FixedClock(TODAY))
 
+    # Only completed sales compute income: V106 and V112 (pending, of F105 and F106), V110
+    # (cancelled, of F102) and V117 (logically deleted, of F101) add nothing.
     assert result["mes"] == "2026-11"
     assert result["farmaceuticos"] == [
         {
@@ -48,19 +50,6 @@ def test_adds_the_completed_sales_of_the_month_per_pharmacist(loaded):
             "ingresos": 11000,
         },
     ]
-
-
-def test_pending_and_cancelled_sales_compute_no_income(loaded):
-    result = dict(income(pharmacist_income_current_month(loaded, FixedClock(TODAY))))
-
-    assert "F105" not in result and "F106" not in result  # V106 and V112, pending
-    assert result["F102"] == 11000  # V110 (3900) is cancelled
-
-
-def test_logically_deleted_sales_compute_no_income(loaded):
-    result = dict(income(pharmacist_income_current_month(loaded, FixedClock(TODAY))))
-
-    assert result["F101"] == 24100  # without V117 (3900), deleted
 
 
 def test_the_month_changes_with_the_date(loaded):

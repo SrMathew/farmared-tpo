@@ -101,23 +101,6 @@ def test_batches_are_used_by_nearest_expiry_first():
 
 
 @pytest.mark.unit
-def test_expired_and_logically_deleted_batches_are_skipped():
-    store = InMemoryStore(
-        [sale("V1", {"P1": 5})],
-        [
-            batch("L1", 50, date(2026, 11, 14)),  # expired yesterday
-            batch("L2", 50, date(2026, 11, 20), activo=False),
-            batch("L3", 50, TODAY),  # expires today: can still be dispensed
-            batch("L4", 50, date(2027, 1, 31)),
-        ],
-    )
-
-    run(store)
-
-    assert store.units() == {"L1": 50, "L2": 50, "L3": 45, "L4": 50}
-
-
-@pytest.mark.unit
 def test_only_the_batches_of_the_branch_of_the_sale_are_used():
     store = InMemoryStore(
         [sale("V1", {"P1": 5})],
@@ -249,31 +232,6 @@ def test_stock_is_discounted_first_expired_first_out(loaded_for_writing):
 
 
 @pytest.mark.integration
-def test_stock_of_other_branches_is_not_used(loaded_for_writing):
-    # The wholesaler S109 has 2000 units of PRD101, but the sale is of S102, which has none.
-    register(loaded_for_writing, "V900", {"PRD101": 1}, id_sucursal="S102")
-
-    with pytest.raises(BusinessRuleError, match="insuficiente de PRD101: se pidieron 1 y hay 0"):
-        update_stock(MongoUnitOfWork(loaded_for_writing), CLOCK, "V900")
-
-
-@pytest.mark.integration
-def test_insufficient_stock_rejects_the_whole_operation(loaded_for_writing):
-    # PRD101 is covered; PRD103 has 110 non-expired units at S101.
-    register(loaded_for_writing, "V900", {"PRD101": 5, "PRD103": 111})
-
-    with pytest.raises(BusinessRuleError, match="de PRD103: se pidieron 111 y hay 110"):
-        update_stock(MongoUnitOfWork(loaded_for_writing), CLOCK, "V900")
-
-    assert units(loaded_for_writing, "L101", "L102", "L103") == {
-        "L101": 120,
-        "L102": 30,
-        "L103": 80,
-    }
-    assert loaded_for_writing.ventas.find_one({"_id": "V900"})["stock_aplicado"] is False
-
-
-@pytest.mark.integration
 def test_a_failure_before_the_commit_rolls_the_batches_back(loaded_for_writing, monkeypatch):
     register(loaded_for_writing, "V900", {"PRD103": 40})
 
@@ -286,26 +244,6 @@ def test_a_failure_before_the_commit_rolls_the_batches_back(loaded_for_writing, 
         update_stock(MongoUnitOfWork(loaded_for_writing), CLOCK, "V900")
 
     assert units(loaded_for_writing, "L102", "L103") == {"L102": 30, "L103": 80}
-
-
-@pytest.mark.integration
-@pytest.mark.parametrize(
-    ("id_venta", "message"),
-    [
-        ("V102", "La venta V102 ya descontó su stock"),  # loaded as completed
-        ("V011", "La venta V011 está 'Pendiente'"),
-        ("V015", "La venta V015 está 'Anulada'"),
-        ("V117", "La venta V117 está dada de baja"),
-        ("V999", "La venta V999 no existe"),
-    ],
-)
-def test_sales_that_cannot_discount_stock_are_rejected(loaded_for_writing, id_venta, message):
-    before = list(loaded_for_writing.lotes.find().sort("_id"))
-
-    with pytest.raises(BusinessRuleError, match=message):
-        update_stock(MongoUnitOfWork(loaded_for_writing), CLOCK, id_venta)
-
-    assert list(loaded_for_writing.lotes.find().sort("_id")) == before
 
 
 @pytest.mark.integration

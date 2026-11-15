@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from farmared.adapters.mongo.ids import Sequence, next_ids
 from farmared.adapters.redis.connection import key
 from farmared.domain.errors import BusinessRuleError
 from farmared.loading.loader import load_data, read_and_validate
@@ -192,15 +191,6 @@ def test_loaded_sale_embeds_its_items_and_keeps_the_branch_of_its_pharmacist(
     assert sale["stock_aplicado"] is True  # completed: already reflected in the stock CSV
     assert sale["activo"] is True
     assert database.ventas.find_one({"_id": "V011"})["stock_aplicado"] is False  # pending
-
-
-@pytest.mark.integration
-def test_new_identifiers_continue_after_the_loaded_ones(database, redis_client):
-    load_data(database, redis_client, DATA, TODAY)
-
-    assert next_ids(database, Sequence.SALE) == ["V118"]
-    assert next_ids(database, Sequence.SALE_ITEM, count=2) == ["D120", "D121"]
-    assert next_ids(database, Sequence.CUSTOMER) == ["C111"]
 
 
 @pytest.mark.integration

@@ -33,13 +33,6 @@ def test_each_sale_shows_pharmacist_licence_branch_and_total(loaded):
     }
 
 
-def test_completed_and_cancelled_sales_are_left_out(loaded):
-    ids = {sale["id_venta"] for sale in pending_sales(loaded)}
-
-    assert "V001" not in ids  # completed
-    assert "V015" not in ids and "V110" not in ids  # cancelled
-
-
 def test_logically_deleted_sales_are_left_out(loaded):
     loaded.ventas.update_one({"_id": "V106"}, {"$set": {"activo": False}})
     try:

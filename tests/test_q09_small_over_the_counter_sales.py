@@ -13,6 +13,8 @@ pytestmark = pytest.mark.integration
 def test_lists_small_over_the_counter_sales_by_date(loaded):
     result = small_over_the_counter_sales(loaded)
 
+    # Left out: V015 and V110 (cancelled), V117 (logically deleted), V001 (with
+    # prescription) and V002 (5750). V112 is pending and is listed.
     assert [(row["id_venta"], row["total"]) for row in result] == [
         ("V108", 3200),  # more than a year before the load
         ("V013", 4400),
@@ -39,29 +41,6 @@ def test_each_sale_comes_with_its_items(loaded):
             {"id_detalle": "D019", "id_producto": "PRD012", "cantidad": 1, "precio_unit": 1800},
         ],
     }
-
-
-def test_cancelled_sales_are_excluded(loaded):
-    ids = {row["id_venta"] for row in small_over_the_counter_sales(loaded)}
-
-    assert "V015" not in ids and "V110" not in ids  # 3500 and 3900, but cancelled
-
-
-def test_pending_sales_are_included(loaded):
-    states = {row["id_venta"]: row["estado"] for row in small_over_the_counter_sales(loaded)}
-
-    assert states["V112"] == "Pendiente"
-
-
-def test_sales_with_prescription_or_a_higher_total_are_left_out(loaded):
-    ids = {row["id_venta"] for row in small_over_the_counter_sales(loaded)}
-
-    assert "V001" not in ids  # 3850 but 'Con receta'
-    assert "V002" not in ids  # 'Venta libre' but 5750
-
-
-def test_logically_deleted_sales_are_left_out(loaded):
-    assert "V117" not in {row["id_venta"] for row in small_over_the_counter_sales(loaded)}
 
 
 def test_the_limit_is_strict_and_is_a_parameter(loaded):

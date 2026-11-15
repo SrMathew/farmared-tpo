@@ -13,6 +13,7 @@ pytestmark = pytest.mark.integration
 def test_lists_the_batches_below_50_units_from_the_lowest(loaded):
     result = low_stock_batches(loaded)
 
+    # Expired batches and batches of discontinued products are reported too (L018 is both).
     assert [(row["id_lote"], row["unidades"]) for row in result] == [
         ("L115", 0),
         ("L116", 2),
@@ -56,22 +57,8 @@ def test_each_batch_shows_product_branch_and_supplier(loaded):
     }
 
 
-def test_batches_with_50_units_or_more_are_left_out(loaded):
-    ids = {row["id_lote"] for row in low_stock_batches(loaded)}
-
-    assert not ids & {"L009", "L001", "L016", "L113"}  # 60, 120, 4000 and 2000 units
-
-
 def test_logically_deleted_batches_are_left_out(loaded):
     assert "L117" not in {row["id_lote"] for row in low_stock_batches(loaded, below=1000)}
-
-
-def test_expired_batches_and_inactive_products_are_still_reported(loaded):
-    rows = {row["id_lote"]: row for row in low_stock_batches(loaded)}
-
-    # L018: expired on 2026-09-30, of PRD012, a discontinued product.
-    assert rows["L018"]["producto"]["id_producto"] == "PRD012"
-    assert rows["L018"]["vencimiento"] == datetime(2026, 9, 30)
 
 
 def test_the_limit_is_a_parameter(loaded):

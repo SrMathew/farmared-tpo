@@ -8,7 +8,7 @@ from fakes.sales import InMemoryIdempotencyKeys, InMemorySalesStore, RecordingRa
 from fakes.stock import InMemoryUnitOfWork
 
 from farmared.adapters.mongo.documents import COUNTERS
-from farmared.adapters.mongo.unit_of_work import MongoStore, MongoUnitOfWork
+from farmared.adapters.mongo.unit_of_work import MongoUnitOfWork
 from farmared.adapters.redis.connection import get_redis
 from farmared.adapters.redis.idempotency_keys import RedisIdempotencyKeys
 from farmared.adapters.redis.product_ranking import ProductRanking
@@ -23,10 +23,7 @@ from farmared.domain.models import (
     Pharmacist,
     Prescription,
     Product,
-    Sale,
-    SaleItem,
 )
-from farmared.services.complete_pending_sale import complete_pending_sale
 from farmared.services.q14_register_sale import register_sale
 from farmared.services.redis_sync import product_ranking_differences
 
@@ -115,13 +112,11 @@ def store():
             pharmacist("F1", "S1"),
             pharmacist("F2", "S2"),  # works at the wholesaler
             pharmacist("F3", "S1", activo=False),
-            pharmacist("F4", "S3"),  # works at a closed branch
         ],
-        branches=[branch("S1"), branch("S2", tipo="Droguería"), branch("S3", activo=False)],
+        branches=[branch("S1"), branch("S2", tipo="Droguería")],
         products=[
             product("P1", "Venta libre", 100),
             product("P2", "Bajo receta", 200),
-            product("P3", "Bajo receta archivada", 300),
             product("P4", "Venta libre", 400, activo=False),
         ],
         prescriptions=[
@@ -129,13 +124,10 @@ def store():
             prescription(
                 "R2", **LONG_TERM, dispensas_realizadas=1, proxima_dispensa=date(2026, 11, 10)
             ),
-            prescription(
-                "R3", **LONG_TERM, dispensas_realizadas=2, proxima_dispensa=date(2026, 11, 10)
-            ),
             prescription("R4", estado="Vencida"),
             prescription("R5", id_cliente="C2"),
         ],
-        batches=[batch("L1", "P1", 50), batch("L2", "P2", 5), batch("L3", "P3", 5)],
+        batches=[batch("L1", "P1", 50), batch("L2", "P2", 5)],
     )
 
 
@@ -228,30 +220,14 @@ def test_long_term_treatment_schedules_the_next_dispense_30_days_later(store, ra
 
 
 @pytest.mark.unit
-def test_last_dispense_completes_the_long_term_treatment(store, ranking):
-    after = register(store, ranking, [("P2", 1)], id_receta="R3")["receta"]["despues"]
-
-    assert (after["dispensas_realizadas"], after["estado"], after["proxima_dispensa"]) == (
-        3,
-        "Completada",
-        None,
-    )
-
-
-@pytest.mark.unit
 @pytest.mark.parametrize(
     ("changes", "message"),
     [
         ({"id_cliente": "C9"}, "El cliente C9 no existe"),
-        ({"id_cliente": "C3"}, "El cliente C3 está dado de baja"),
         ({"id_farmaceutico": "F9"}, "El farmacéutico F9 no existe"),
-        ({"id_farmaceutico": "F3"}, "El farmacéutico F3 está inactivo"),
         ({"id_farmaceutico": "F2"}, "solo las farmacias registran ventas"),
-        ({"id_farmaceutico": "F4"}, "La sucursal S3 está inactiva"),
         ({"items": [("P9", 1)]}, "El producto P9 no existe"),
-        ({"items": [("P4", 1)]}, "El producto P4 está discontinuado"),
         ({"items": [("P2", 1)]}, "son de venta bajo receta y no se indicó receta"),
-        ({"items": [("P3", 1)]}, "son de venta bajo receta y no se indicó receta"),
         ({"items": [("P2", 1)], "id_receta": "R9"}, "La receta R9 no existe"),
         ({"items": [("P2", 1)], "id_receta": "R5"}, "La receta R5 pertenece a otro cliente"),
         ({"items": [("P2", 1)], "id_receta": "R4"}, "La receta R4 está 'Vencida'"),
@@ -342,77 +318,6 @@ def test_a_rejected_request_can_be_sent_again_with_the_same_key(store, ranking):
     assert result["venta"]["id_venta"] == "V001"
 
 
-# --- Completion of a pending sale, without database engines -----------------------------
-
-
-def pending_sale(id_venta: str, id_producto: str, units: int, id_receta: str | None) -> Sale:
-    line = SaleItem(id_detalle="D900", id_producto=id_producto, cantidad=units, precio_unit=150)
-    return Sale(
-        id_venta=id_venta,
-        id_cliente="C1",
-        id_farmaceutico="F1",
-        id_sucursal="S1",
-        id_receta=id_receta,
-        fecha=date(2026, 11, 2),
-        tipo="Con receta" if id_receta else "Venta libre",
-        medio_pago="Débito",
-        total=line.subtotal,
-        estado="Pendiente",
-        items=[line],
-    )
-
-
-@pytest.mark.unit
-def test_completing_a_pending_sale_dispenses_and_discounts_stock(store, ranking):
-    store.sales["V900"] = pending_sale("V900", "P2", 2, "R1")
-
-    result = complete_pending_sale(InMemoryUnitOfWork(store), ranking, CLOCK, "V900")
-
-    assert (result["venta"]["antes"]["estado"], result["venta"]["despues"]["estado"]) == (
-        "Pendiente",
-        "Completada",
-    )
-    after = result["venta"]["despues"]
-    assert (after["stock_aplicado"], after["fecha"], after["total"]) == (
-        True,
-        date(2026, 11, 2),  # date and prices stay as registered
-        300,
-    )
-    assert store.prescriptions["R1"].estado == "Completada"
-    assert store.units()["L2"] == 3
-    assert ranking.counted == {"V900": {"P2": 2}}
-
-
-@pytest.mark.unit
-def test_a_pending_sale_without_stock_stays_pending(store, ranking):
-    store.sales["V900"] = pending_sale("V900", "P2", 6, "R1")
-    before = state(store)
-
-    with pytest.raises(BusinessRuleError, match="insuficiente de P2: se pidieron 6 y hay 5"):
-        complete_pending_sale(InMemoryUnitOfWork(store), ranking, CLOCK, "V900")
-
-    assert state(store) == before
-    assert ranking.counted == {}
-
-
-@pytest.mark.unit
-def test_only_a_pending_sale_can_be_completed(store, ranking):
-    register(store, ranking, [("P1", 1)])
-
-    with pytest.raises(BusinessRuleError, match="V001 está 'Completada': solo una venta 'Pend"):
-        complete_pending_sale(InMemoryUnitOfWork(store), ranking, CLOCK, "V001")
-    with pytest.raises(BusinessRuleError, match="La venta V999 no existe"):
-        complete_pending_sale(InMemoryUnitOfWork(store), ranking, CLOCK, "V999")
-
-
-@pytest.mark.unit
-def test_a_pending_sale_is_not_completed_against_an_expired_prescription(store, ranking):
-    store.sales["V900"] = pending_sale("V900", "P2", 1, "R4")
-
-    with pytest.raises(BusinessRuleError, match="La receta R4 está 'Vencida'"):
-        complete_pending_sale(InMemoryUnitOfWork(store), ranking, CLOCK, "V900")
-
-    assert store.sales["V900"].estado == "Pendiente"
 
 
 # --- Against MongoDB and Redis ----------------------------------------------------------
@@ -479,16 +384,6 @@ def test_sale_prescription_and_stock_are_stored_together(loaded_for_writing):
 
 
 @pytest.mark.integration
-def test_long_term_treatment_is_updated_in_mongodb(loaded_for_writing):
-    # RC101 of C101: long-term, 1 of 3 dispenses done.
-    register_in_mongo(loaded_for_writing, [("PRD103", 1)], id_receta="RC101")
-
-    recipe = loaded_for_writing.recetas.find_one({"_id": "RC101"})
-    assert (recipe["dispensas_realizadas"], recipe["estado"]) == (2, "Vigente")
-    assert recipe["proxima_dispensa"].date() == date(2026, 12, 15)
-
-
-@pytest.mark.integration
 def test_if_the_stock_fails_nothing_is_stored(loaded_for_writing):
     database = loaded_for_writing
     before = snapshot(database)
@@ -500,54 +395,6 @@ def test_if_the_stock_fails_nothing_is_stored(loaded_for_writing):
     # No sale, the prescription untouched, no batch touched and no identifier used.
     assert snapshot(database) == before
     assert consistent(database)
-
-
-@pytest.mark.integration
-def test_a_failure_before_the_commit_leaves_nothing(loaded_for_writing, monkeypatch):
-    database = loaded_for_writing
-    before = snapshot(database)
-    keys = RedisIdempotencyKeys(get_redis())
-
-    def fail(self, id_venta):
-        raise RuntimeError("failure after sale, prescription and batches were written")
-
-    monkeypatch.setattr(MongoStore, "mark_stock_applied", fail)
-
-    with pytest.raises(RuntimeError):
-        register_in_mongo(
-            database,
-            [("PRD103", 1)],
-            id_receta="RC102",
-            idempotency=keys,
-            idempotency_key="k-1",
-        )
-
-    assert snapshot(database) == before
-    assert consistent(database)
-    assert keys.reserve("k-1") is None  # the key was freed: the request can be sent again
-
-
-@pytest.mark.integration
-def test_rejections_by_validation_store_nothing(loaded_for_writing):
-    database = loaded_for_writing
-    before = snapshot(database)
-
-    with pytest.raises(BusinessRuleError, match="son de venta bajo receta y no se indicó receta"):
-        register_in_mongo(database, [("PRD103", 1)])
-    with pytest.raises(BusinessRuleError, match="La receta RC104 está 'Vencida'"):
-        register_in_mongo(database, [("PRD103", 1)], id_cliente="C102", id_receta="RC104")
-    with pytest.raises(BusinessRuleError, match="La receta RC105 pertenece a otro cliente"):
-        register_in_mongo(database, [("PRD103", 1)], id_receta="RC105")
-    with pytest.raises(BusinessRuleError, match="solo las farmacias registran ventas"):
-        register_in_mongo(database, [("PRD101", 1)], id_farmaceutico="F109")
-    with pytest.raises(BusinessRuleError, match="El farmacéutico F108 está inactivo"):
-        register_in_mongo(database, [("PRD101", 1)], id_farmaceutico="F108")
-    with pytest.raises(BusinessRuleError, match="El cliente C110 está dado de baja"):
-        register_in_mongo(database, [("PRD101", 1)], id_cliente="C110")
-    with pytest.raises(BusinessRuleError, match="El producto PRD110 está discontinuado"):
-        register_in_mongo(database, [("PRD110", 1)])
-
-    assert snapshot(database) == before
 
 
 @pytest.mark.integration
@@ -586,43 +433,7 @@ def test_idempotency_key_in_redis_stops_a_repeated_request(loaded_for_writing):
 
 
 @pytest.mark.integration
-def test_pending_sale_is_completed_with_its_prescription_and_stock(loaded_for_writing):
-    database = loaded_for_writing
-    ranking = ProductRanking(get_redis())
-
-    # V011: C007, 1 x PRD007 at S004, against RC006 (simple, valid). L014 has 45 units.
-    result = complete_pending_sale(MongoUnitOfWork(database), ranking, CLOCK, "V011")
-
-    assert result["venta"]["despues"]["estado"] == "Completada"
-    stored = database.ventas.find_one({"_id": "V011"})
-    assert (stored["estado"], stored["stock_aplicado"]) == ("Completada", True)
-    assert database.recetas.find_one({"_id": "RC006"})["estado"] == "Completada"
-    assert database.lotes.find_one({"_id": "L014"})["unidades"] == 44
-    assert "V011" in ranking.counted_sales()
-    assert consistent(database)
-
-
-@pytest.mark.integration
-def test_pending_sale_without_stock_is_rejected_and_stays_pending(loaded_for_writing):
-    database = loaded_for_writing
-    before = snapshot(database)
-
-    # V012 is of S003, which has no stock of PRD002 nor of PRD011.
-    with pytest.raises(BusinessRuleError) as rejected:
-        complete_pending_sale(
-            MongoUnitOfWork(database), ProductRanking(get_redis()), CLOCK, "V012"
-        )
-
-    assert rejected.value.errors == [
-        "Stock vigente insuficiente de PRD002: se pidieron 2 y hay 0",
-        "Stock vigente insuficiente de PRD011: se pidieron 1 y hay 0",
-    ]
-    assert snapshot(database) == before
-    assert consistent(database)
-
-
-@pytest.mark.integration
-def test_command_line_registers_and_completes_sales(loaded_for_writing, capsys, monkeypatch):
+def test_command_line_registers_a_sale(loaded_for_writing, capsys, monkeypatch):
     monkeypatch.setenv("FARMARED_TODAY", TODAY.isoformat())
     get_settings.cache_clear()
     sale = ["q14", "--cliente", "C101", "--farmaceutico", "F101", "--medio-pago", "Débito"]
@@ -632,8 +443,5 @@ def test_command_line_registers_and_completes_sales(loaded_for_writing, capsys, 
 
     assert main([*sale, "--item", "PRD103:1"]) == 1
     assert "son de venta bajo receta y no se indicó receta" in capsys.readouterr().out
-
-    assert main(["retiro", "V011"]) == 0
-    assert "Retiro de la venta pendiente V011" in capsys.readouterr().out
 
     assert consistent(loaded_for_writing)

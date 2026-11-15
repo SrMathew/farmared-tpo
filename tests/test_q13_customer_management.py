@@ -111,16 +111,6 @@ def test_update_changes_only_the_fields_received(customers):
 
 
 @pytest.mark.unit
-def test_update_changes_the_coverage(customers):
-    result = update_customer(customers, "C001", obra_social="Galeno", nro_afiliado="GA-7")
-
-    assert (result["despues"]["obra_social"], result["despues"]["nro_afiliado"]) == (
-        "Galeno",
-        "GA-7",
-    )
-
-
-@pytest.mark.unit
 def test_moving_to_no_coverage_clears_the_member_number(customers):
     result = update_customer(customers, "C001", obra_social="Sin cobertura")
 

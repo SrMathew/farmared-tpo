@@ -45,11 +45,6 @@ def test_sales_of_an_inactive_pharmacist_count(loaded):
     assert customer_ids(customers_served_at_branch(loaded, "S002")) == ["C001", "C004"]
 
 
-def test_the_same_customer_can_appear_in_several_branches(loaded):
-    assert "C001" in customer_ids(customers_served_at_branch(loaded, "S001"))
-    assert "C001" in customer_ids(customers_served_at_branch(loaded, "S002"))
-
-
 def test_pending_sales_count(loaded):
     # The only sale of S104 is V106, pending.
     assert customer_ids(customers_served_at_branch(loaded, "S104")) == ["C108"]

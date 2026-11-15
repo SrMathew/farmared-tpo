@@ -65,13 +65,6 @@ class InMemorySalesStore(InMemoryStore):
         self.prescriptions[prescription.id_receta] = prescription
         return True
 
-    def complete_sale(self, id_venta: str) -> bool:
-        sale = self.sales[id_venta]
-        if sale.estado != "Pendiente":
-            return False
-        self.sales[id_venta] = sale.model_copy(update={"estado": "Completada"})
-        return True
-
 
 class RecordingRanking:
     """The ranking of q07, reduced to remembering what it was asked to count."""

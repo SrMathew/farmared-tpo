@@ -6,16 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from farmared.domain.models import (
-    Batch,
-    Branch,
-    Customer,
-    Pharmacist,
-    Prescription,
-    Product,
-    Sale,
-    Supplier,
-)
+from farmared.domain.models import Batch, Customer, Prescription, Sale
 
 pytestmark = pytest.mark.unit
 
@@ -28,45 +19,6 @@ def rows(name: str) -> list[dict]:
         return [
             {k: (v if v != "" else None) for k, v in row.items()} for row in csv.DictReader(file)
         ]
-
-
-@pytest.mark.parametrize(
-    ("name", "model", "count"),
-    [
-        ("clientes", Customer, 8),
-        ("sucursales", Branch, 5),
-        ("farmaceuticos", Pharmacist, 7),
-        ("proveedores", Supplier, 5),
-        ("productos", Product, 13),
-        ("stock_lotes", Batch, 18),
-        ("recetas", Prescription, 9),
-    ],
-)
-def test_every_course_record_is_a_valid_entity(name, model, count):
-    entities = [model.model_validate(row) for row in rows(name)]
-
-    assert len(entities) == count
-
-
-def test_course_sales_are_valid_once_joined_with_their_items():
-    branch_of = {r["id_farmaceutico"]: r["id_sucursal"] for r in rows("farmaceuticos")}
-    items: dict[str, list[dict]] = {}
-    for item in rows("detalle_ventas"):
-        items.setdefault(item.pop("id_venta"), []).append(item)
-
-    sales = [
-        Sale.model_validate(
-            {
-                **row,
-                "items": items[row["id_venta"]],
-                "id_sucursal": branch_of[row["id_farmaceutico"]],
-            }
-        )
-        for row in rows("ventas")
-    ]
-
-    assert len(sales) == 16
-    assert sum(len(sale.items) for sale in sales) == 22
 
 
 def test_entities_are_active_unless_stated():

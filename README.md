@@ -193,13 +193,6 @@ python -m farmared q14 --cliente C101 --farmaceutico F101 --item PRD101:2 --item
 productos bajo receta. `--clave` es opcional: es una clave de idempotencia, y repetir un
 pedido con la misma clave no registra una segunda venta.
 
-Además de las 15 consultas hay un comando para completar una venta pendiente (el cliente
-vuelve a retirarla). Aplica las mismas reglas que `q14` y descuenta el stock con `q15`:
-
-```bash
-python -m farmared retiro V011
-```
-
 ### Coherencia entre Redis y MongoDB
 
 MongoDB es el único sistema de registro. Redis guarda solo datos derivados (la caché de

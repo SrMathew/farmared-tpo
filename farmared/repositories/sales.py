@@ -33,10 +33,6 @@ class SalesStore(StockStore, Protocol):
         dispenses. False if it did not."""
         ...
 
-    def complete_sale(self, id_venta: str) -> bool:
-        """Turn a pending sale into a completed one. False if it was not pending."""
-        ...
-
 
 class SaleRanking(Protocol):
     """The ranking of products sold (q07), which is derived from the completed sales."""

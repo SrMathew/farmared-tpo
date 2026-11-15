@@ -22,6 +22,7 @@ def ranking(loaded):
 
 
 def test_top_five_products_by_units_sold(loaded, ranking):
+    # PRD101: five units from V102 and V109; the one of V117 (logically deleted) does not count.
     assert top_products(loaded, ranking) == [
         {"id_producto": "PRD005", "nombre": "Metformina 850mg x60", "unidades": 6},
         {"id_producto": "PRD011", "nombre": "Loratadina 10mg x10", "unidades": 5},
@@ -47,12 +48,6 @@ def test_only_completed_sales_count(loaded, ranking):
     # PRD002 only appears in V012 (pending) and V015 (cancelled).
     assert "PRD002" not in units
     assert not {"V011", "V012", "V015"} & ranking.counted_sales()
-
-
-def test_logically_deleted_sales_do_not_count(loaded, ranking):
-    # V117 (deleted) sold one PRD101; the five counted come from V102 and V109.
-    assert ranking.all()["PRD101"] == 5
-    assert "V117" not in ranking.counted_sales()
 
 
 def test_limit_is_a_parameter(loaded, ranking):

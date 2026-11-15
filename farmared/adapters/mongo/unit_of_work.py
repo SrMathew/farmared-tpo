@@ -9,7 +9,6 @@ from pymongo.database import Database
 from farmared.adapters.mongo.documents import collection_of, from_document, to_document
 from farmared.adapters.mongo.ids import Sequence, next_ids
 from farmared.adapters.mongo.transactions import run_in_transaction
-from farmared.domain.enums import SaleStatus
 from farmared.domain.models import (
     Batch,
     Branch,
@@ -104,14 +103,6 @@ class MongoStore:
                     "estado": document["estado"],
                 }
             },
-            session=self._session,
-        )
-        return result.modified_count == 1
-
-    def complete_sale(self, id_venta: str) -> bool:
-        result = self._database.ventas.update_one(
-            {"_id": id_venta, "estado": SaleStatus.PENDING.value},
-            {"$set": {"estado": SaleStatus.COMPLETED.value}},
             session=self._session,
         )
         return result.modified_count == 1

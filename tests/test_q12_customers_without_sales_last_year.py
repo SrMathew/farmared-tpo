@@ -28,6 +28,8 @@ def test_period_is_the_year_before_the_system_date(loaded):
 def test_lists_the_active_customers_without_sales_in_the_period(loaded):
     result = customers_without_sales_last_year(loaded, FixedClock(TODAY))
 
+    # C106 never bought; the only sale of C105 in the period is logically deleted. C008 and
+    # C110 have no sales either, but they are inactive.
     assert customer_ids(result) == ["C004", "C105", "C106", "C107"]
     assert result["clientes"][0] == {
         "id_cliente": "C004",
@@ -35,21 +37,6 @@ def test_lists_the_active_customers_without_sales_in_the_period(loaded):
         "apellido": "Navarro",
         "dni": "33987654",
     }
-
-
-def test_customers_who_never_bought_are_listed(loaded):
-    assert "C106" in customer_ids(customers_without_sales_last_year(loaded, FixedClock(TODAY)))
-
-
-def test_inactive_customers_are_left_out(loaded):
-    ids = customer_ids(customers_without_sales_last_year(loaded, FixedClock(TODAY)))
-
-    assert "C008" not in ids and "C110" not in ids  # no sales, but inactive
-
-
-def test_a_logically_deleted_sale_does_not_count_as_a_sale(loaded):
-    # The only sale of C105 in the period is V117, logically deleted.
-    assert "C105" in customer_ids(customers_without_sales_last_year(loaded, FixedClock(TODAY)))
 
 
 def test_a_pending_sale_counts_and_a_cancelled_one_does_not(loaded):

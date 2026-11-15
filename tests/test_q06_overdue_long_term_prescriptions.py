@@ -22,6 +22,8 @@ def overdue(loaded, day: date = TODAY) -> list[dict]:
 def test_lists_overdue_treatments_from_the_most_overdue(loaded):
     result = overdue(loaded)
 
+    # Left out: RC106 (not due yet), RC103 (completed), RC009 and RC104 (simple, expired)
+    # and RC107 (valid but never dispensed: nothing is scheduled).
     assert [(row["id_receta"], row["dias_de_atraso"]) for row in result] == [
         ("RC002", 61),  # due 2026-09-15
         ("RC003", 45),  # due 2026-10-01
@@ -53,19 +55,6 @@ def test_each_prescription_carries_all_the_customer_data(loaded):
             "activo": True,
         },
     }
-
-
-def test_treatments_not_yet_due_are_left_out(loaded):
-    # RC106: next dispense ten days after the load.
-    assert "RC106" not in {row["id_receta"] for row in overdue(loaded)}
-
-
-def test_only_valid_long_term_treatments_are_listed(loaded):
-    ids = {row["id_receta"] for row in overdue(loaded)}
-
-    assert "RC103" not in ids  # long-term but completed
-    assert "RC009" not in ids and "RC104" not in ids  # simple and expired
-    assert "RC107" not in ids  # long-term, valid, never dispensed: nothing scheduled
 
 
 def test_a_dispense_due_today_is_not_overdue_yet(loaded):

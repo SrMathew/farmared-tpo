@@ -13,7 +13,9 @@ pytestmark = pytest.mark.integration
 def test_lists_customers_with_more_than_one_prescription_and_the_count(loaded):
     result = customers_with_several_prescriptions(loaded)
 
-    # Highest count first, then by customer.
+    # Highest count first, then by customer. Prescriptions count whatever their state
+    # (C002: one completed and one expired); logically deleted ones do not (C101 has a
+    # fourth one, RC111, deleted). Customers with a single prescription are left out.
     assert [(row["id_cliente"], row["cantidad_recetas"]) for row in result] == [
         ("C101", 3),
         ("C001", 2),
@@ -32,23 +34,6 @@ def test_each_row_identifies_the_customer(loaded):
         "dni": "31245678",
         "cantidad_recetas": 2,
     }
-
-
-def test_customers_with_a_single_prescription_are_left_out(loaded):
-    ids = {row["id_cliente"] for row in customers_with_several_prescriptions(loaded)}
-
-    assert not ids & {"C003", "C004", "C007", "C103", "C108", "C109"}
-
-
-def test_logically_deleted_prescriptions_do_not_count(loaded):
-    # C101 has four prescriptions on file; RC111 is logically deleted.
-    assert loaded.recetas.count_documents({"id_cliente": "C101"}) == 4
-    assert customers_with_several_prescriptions(loaded)[0]["cantidad_recetas"] == 3
-
-
-def test_prescriptions_count_whatever_their_state(loaded):
-    # C002: RC005 is completed and RC009 expired.
-    assert "C002" in {row["id_cliente"] for row in customers_with_several_prescriptions(loaded)}
 
 
 def test_command_line_prints_the_result(loaded, capsys):
