@@ -3,6 +3,7 @@
     python -m farmared q01 [--no-cache]
     python -m farmared q02
     python -m farmared q03 C006
+    python -m farmared q04
 
 This is the only place that creates the connections and hands them to the services.
 """
@@ -19,6 +20,9 @@ from farmared.output import print_result
 from farmared.services.q01_active_products_with_supplier import active_products_with_supplier
 from farmared.services.q02_pending_sales import pending_sales
 from farmared.services.q03_customer_history import customer_history
+from farmared.services.q04_customers_with_several_prescriptions import (
+    customers_with_several_prescriptions,
+)
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -36,6 +40,11 @@ def _q03(args: argparse.Namespace) -> None:
     print_result(f"q03 - Historial del cliente {args.id_cliente}", result)
 
 
+def _q04(args: argparse.Namespace) -> None:
+    result = customers_with_several_prescriptions(get_database())
+    print_result("q04 - Clientes con más de una receta", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -50,6 +59,9 @@ def build_parser() -> argparse.ArgumentParser:
     q03 = commands.add_parser("q03", help="Historial de un cliente: ventas y recetas por fecha")
     q03.add_argument("id_cliente", help="identificador del cliente, por ejemplo C006")
     q03.set_defaults(run=_q03)
+
+    q04 = commands.add_parser("q04", help="Clientes con más de una receta y cuántas tienen")
+    q04.set_defaults(run=_q04)
 
     return parser
 

@@ -164,3 +164,39 @@ def customer_history(database: Database[Document], id_cliente: str) -> Document 
         },
         "historial": list(history),
     }
+
+
+def customers_with_several_prescriptions(database: Database[Document]) -> list[Document]:
+    """q04. Customers with more than one prescription, and how many each has.
+
+    $group counts the prescriptions per customer; only then $lookup brings the customer
+    (recetas.id_cliente -> clientes._id), so the join runs on the few groups that are left.
+    """
+    return list(
+        database.recetas.aggregate(
+            [
+                {"$match": {"activo": True}},
+                {"$group": {"_id": "$id_cliente", "cantidad_recetas": {"$sum": 1}}},
+                {"$match": {"cantidad_recetas": {"$gt": 1}}},
+                {
+                    "$lookup": {
+                        "from": "clientes",
+                        "localField": "_id",
+                        "foreignField": "_id",
+                        "as": "cliente",
+                    }
+                },
+                {"$unwind": "$cliente"},
+                {"$sort": {"cantidad_recetas": -1, "_id": 1}},
+                {
+                    "$replaceWith": {
+                        "id_cliente": "$_id",
+                        "nombre": "$cliente.nombre",
+                        "apellido": "$cliente.apellido",
+                        "dni": "$cliente.dni",
+                        "cantidad_recetas": "$cantidad_recetas",
+                    }
+                },
+            ]
+        )
+    )
