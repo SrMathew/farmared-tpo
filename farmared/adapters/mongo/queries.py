@@ -4,10 +4,12 @@ Every function receives the database and returns plain dictionaries, with the bu
 identifier under its own name (`id_producto`) instead of `_id`.
 """
 
+from datetime import date
 from typing import Any
 
 from pymongo.database import Database
 
+from farmared.dates import to_datetime
 from farmared.domain.enums import SaleStatus
 
 Document = dict[str, Any]
@@ -197,6 +199,52 @@ def customers_with_several_prescriptions(database: Database[Document]) -> list[D
                         "cantidad_recetas": "$cantidad_recetas",
                     }
                 },
+            ]
+        )
+    )
+
+
+def active_pharmacists_with_sales_since(
+    database: Database[Document], since: date
+) -> list[Document]:
+    """q05. Active pharmacists with how many sales they registered from `since` on.
+
+    The pipeline starts from the pharmacists, not from the sales, so the ones with no sales
+    in the period are kept with a count of zero. $lookup brings the sales of each one
+    (ventas.id_farmaceutico -> farmaceuticos._id) already filtered by date and state.
+    """
+    return list(
+        database.farmaceuticos.aggregate(
+            [
+                {"$match": {"activo": True}},
+                {
+                    "$lookup": {
+                        "from": "ventas",
+                        "localField": "_id",
+                        "foreignField": "id_farmaceutico",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "fecha": {"$gte": to_datetime(since)},
+                                    "estado": {"$ne": SaleStatus.CANCELLED.value},
+                                    "activo": True,
+                                }
+                            }
+                        ],
+                        "as": "ventas",
+                    }
+                },
+                {
+                    "$replaceWith": {
+                        "id_farmaceutico": "$_id",
+                        "nombre": "$nombre",
+                        "apellido": "$apellido",
+                        "matricula": "$matricula",
+                        "id_sucursal": "$id_sucursal",
+                        "cantidad_ventas": {"$size": "$ventas"},
+                    }
+                },
+                {"$sort": {"cantidad_ventas": -1, "id_farmaceutico": 1}},
             ]
         )
     )

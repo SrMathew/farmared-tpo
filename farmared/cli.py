@@ -4,6 +4,7 @@
     python -m farmared q02
     python -m farmared q03 C006
     python -m farmared q04
+    python -m farmared q05
 
 This is the only place that creates the connections and hands them to the services.
 """
@@ -14,6 +15,7 @@ import sys
 from farmared.adapters.mongo.connection import get_database
 from farmared.adapters.redis.catalog_cache import CatalogCache
 from farmared.adapters.redis.connection import get_redis
+from farmared.clock import get_clock
 from farmared.config import get_settings
 from farmared.domain.errors import BusinessRuleError
 from farmared.output import print_result
@@ -23,6 +25,7 @@ from farmared.services.q03_customer_history import customer_history
 from farmared.services.q04_customers_with_several_prescriptions import (
     customers_with_several_prescriptions,
 )
+from farmared.services.q05_pharmacist_sales_last_60_days import pharmacist_sales_last_60_days
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -45,6 +48,11 @@ def _q04(args: argparse.Namespace) -> None:
     print_result("q04 - Clientes con más de una receta", result)
 
 
+def _q05(args: argparse.Namespace) -> None:
+    result = pharmacist_sales_last_60_days(get_database(), get_clock())
+    print_result("q05 - Ventas por farmacéutico activo en los últimos 60 días", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -62,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     q04 = commands.add_parser("q04", help="Clientes con más de una receta y cuántas tienen")
     q04.set_defaults(run=_q04)
+
+    q05 = commands.add_parser(
+        "q05", help="Farmacéuticos activos y sus ventas de los últimos 60 días"
+    )
+    q05.set_defaults(run=_q05)
 
     return parser
 
