@@ -32,7 +32,15 @@ def active_products_with_supplier(database: Database[Document]) -> list[Document
                     }
                 },
                 {"$unwind": "$proveedor"},
-                {"$set": {"id_producto": "$_id", "proveedor.id_proveedor": "$proveedor._id"}},
+                # Show the business identifier first and under its own name instead of _id.
+                {
+                    "$set": {
+                        "proveedor": {
+                            "$mergeObjects": [{"id_proveedor": "$proveedor._id"}, "$proveedor"]
+                        }
+                    }
+                },
+                {"$replaceWith": {"$mergeObjects": [{"id_producto": "$_id"}, "$$ROOT"]}},
                 {"$unset": ["_id", "proveedor._id", "id_proveedor"]},
                 {"$sort": {"id_producto": 1}},
             ]
@@ -71,12 +79,11 @@ def pending_sales(database: Database[Document]) -> list[Document]:
                 {"$unwind": "$sucursal"},
                 {"$sort": {"fecha": 1, "_id": 1}},
                 {
-                    "$project": {
-                        "_id": 0,
+                    "$replaceWith": {
                         "id_venta": "$_id",
-                        "fecha": 1,
-                        "id_cliente": 1,
-                        "total": 1,
+                        "fecha": "$fecha",
+                        "id_cliente": "$id_cliente",
+                        "total": "$total",
                         "farmaceutico": {
                             "id_farmaceutico": "$farmaceutico._id",
                             "nombre": "$farmaceutico.nombre",
@@ -92,3 +99,68 @@ def pending_sales(database: Database[Document]) -> list[Document]:
             ]
         )
     )
+
+
+def customer_history(database: Database[Document], id_cliente: str) -> Document | None:
+    """q03. A customer with their sales and prescriptions in chronological order.
+
+    Sales and prescriptions live in two collections; $unionWith puts both in one list, each
+    record with a common `fecha` (sale date / issue date), and a single $sort orders them.
+    On the same day the prescription goes first: it is issued before it is dispensed.
+    Sale items come embedded in the sale, so no further join is needed.
+    Returns None if the customer does not exist.
+    """
+    customer = database.clientes.find_one({"_id": id_cliente})
+    if customer is None:
+        return None
+    mine = {"$match": {"id_cliente": id_cliente, "activo": True}}
+    history = database.ventas.aggregate(
+        [
+            mine,
+            {
+                "$replaceWith": {
+                    "fecha": "$fecha",
+                    "registro": "venta",
+                    "id": "$_id",
+                    "tipo": "$tipo",
+                    "estado": "$estado",
+                    "medio_pago": "$medio_pago",
+                    "total": "$total",
+                    "id_farmaceutico": "$id_farmaceutico",
+                    "id_receta": "$id_receta",
+                    "items": "$items",
+                }
+            },
+            {
+                "$unionWith": {
+                    "coll": "recetas",
+                    "pipeline": [
+                        mine,
+                        {
+                            "$replaceWith": {
+                                "fecha": "$fecha_emision",
+                                "registro": "receta",
+                                "id": "$_id",
+                                "tipo": "$tipo",
+                                "estado": "$estado",
+                                "medico": "$medico",
+                                "dispensas_autorizadas": "$dispensas_autorizadas",
+                                "dispensas_realizadas": "$dispensas_realizadas",
+                                "proxima_dispensa": "$proxima_dispensa",
+                            }
+                        },
+                    ],
+                }
+            },
+            {"$sort": {"fecha": 1, "registro": 1, "id": 1}},
+        ]
+    )
+    return {
+        "cliente": {
+            "id_cliente": customer["_id"],
+            "nombre": customer["nombre"],
+            "apellido": customer["apellido"],
+            "activo": customer["activo"],
+        },
+        "historial": list(history),
+    }

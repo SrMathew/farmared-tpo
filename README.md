@@ -132,11 +132,12 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 ----|----------|---------|-------|-------
 1   | Productos activos con todos los datos de su proveedor | `python -m farmared q01` | MongoDB + Redis (caché) | [`q01_active_products_with_supplier.py`](./farmared/services/q01_active_products_with_supplier.py)
 2   | Ventas en estado "Pendiente" con su farmacéutico (nombre, matrícula y sucursal) y el total | `python -m farmared q02` | MongoDB | [`q02_pending_sales.py`](./farmared/services/q02_pending_sales.py)
+3   | Historial completo de un cliente: ventas y recetas en orden cronológico | `python -m farmared q03 C006` | MongoDB | [`q03_customer_history.py`](./farmared/services/q03_customer_history.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
 
-Las consultas 3 a 15 se agregan en los próximos commits.
+Las consultas 4 a 15 se agregan en los próximos commits.
 
 ## 🧪 Tests y Calidad 🧪
 
