@@ -1,8 +1,13 @@
 """Fixtures shared by every test."""
 
+from datetime import date
+
 import pytest
 
 from farmared.config import get_settings
+
+# "Today" for every test that uses loaded data.
+TODAY = date(2026, 11, 15)
 
 
 @pytest.fixture(autouse=True)
@@ -42,3 +47,18 @@ def redis_client(database):
     clear_derived_data(client)
     yield client
     clear_derived_data(client)
+
+
+@pytest.fixture
+def loaded(database, redis_client):
+    """The test database with the course data and the additional records loaded.
+
+    The clock is fixed, so the relative dates of the additional records (HOY-30) and every
+    query that depends on "today" give the same result on any day the tests run.
+    """
+    from pathlib import Path
+
+    from farmared.loading.loader import load_data
+
+    load_data(database, redis_client, Path(__file__).resolve().parents[1] / "data", TODAY)
+    return database

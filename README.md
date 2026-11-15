@@ -119,7 +119,23 @@ datos de la cátedra, que se cargan tal cual:
 
 ## 🔎 Consultas 🔎
 
-Esta sección va a listar, para cada una, el comando para ejecutarla, sus parámetros y el motor que usa.
+Cada consulta se ejecuta desde la terminal del dev container, después de `make load`:
+
+```bash
+python -m farmared <consulta> [parámetros]
+```
+
+El resultado se imprime en formato JSON. Cada consulta está en su propio módulo dentro de
+`farmared/services/`, y su sentencia de MongoDB está en `farmared/adapters/mongo/queries.py`.
+
+\#  | Consulta | Comando | Motor | Módulo
+----|----------|---------|-------|-------
+1   | Productos activos con todos los datos de su proveedor | `python -m farmared q01` | MongoDB + Redis (caché) | [`q01_active_products_with_supplier.py`](./farmared/services/q01_active_products_with_supplier.py)
+
+`q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
+de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
+
+Las consultas 2 a 15 se agregan en los próximos commits.
 
 ## 🧪 Tests y Calidad 🧪
 
@@ -144,6 +160,7 @@ data/given/      Datasets CSV provistos por la cátedra
 data/added/      Registros adicionales propios
 docs/            Enunciado e informe
 farmared/        Paquete Python del sistema
+farmared/services/  Un módulo por consulta (q01 a q15)
 scripts/         Puntos de entrada ejecutables: check_environment.py y load_data.py
 tests/           Tests (pytest)
 pyproject.toml   Dependencias y configuración de las herramientas
