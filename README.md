@@ -139,6 +139,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 7   | Top 5 productos más vendidos en unidades (solo ventas completadas) | `python -m farmared q07` | Redis (ranking) + MongoDB | [`q07_top_products.py`](./farmared/services/q07_top_products.py)
 8   | Lotes con menos de 50 unidades, indicando producto, sucursal y proveedor | `python -m farmared q08` | MongoDB | [`q08_low_stock_batches.py`](./farmared/services/q08_low_stock_batches.py)
 9   | Ventas de tipo "Venta libre" con total menor a $5.000, sin las anuladas | `python -m farmared q09` | MongoDB | [`q09_small_over_the_counter_sales.py`](./farmared/services/q09_small_over_the_counter_sales.py)
+10  | Clientes atendidos en una sucursal dada, a través del farmacéutico que registró la venta (esté activo o no) | `python -m farmared q10 S002` | MongoDB | [`q10_customers_served_at_branch.py`](./farmared/services/q10_customers_served_at_branch.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.

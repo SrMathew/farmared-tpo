@@ -421,3 +421,50 @@ def small_over_the_counter_sales(database: Database[Document], below: int) -> li
             ]
         )
     )
+
+
+def customers_served_at_branch(database: Database[Document], id_sucursal: str) -> Document | None:
+    """q10. The customers with at least one sale registered at a branch.
+
+    The branch is reached through the pharmacist who registered the sale: each sale stores
+    `id_sucursal`, the branch of its pharmacist at registration time, so the filter needs no
+    join and does not depend on the pharmacist being active today. The sales of the branch
+    are grouped by customer, and a $lookup brings each customer once.
+    Returns None if the branch does not exist.
+    """
+    branch = database.sucursales.find_one({"_id": id_sucursal})
+    if branch is None:
+        return None
+    customers = database.ventas.aggregate(
+        [
+            {"$match": {"id_sucursal": id_sucursal, "activo": True}},
+            {"$group": {"_id": "$id_cliente"}},
+            {
+                "$lookup": {
+                    "from": "clientes",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "cliente",
+                }
+            },
+            {"$unwind": "$cliente"},
+            {"$sort": {"_id": 1}},
+            {
+                "$replaceWith": {
+                    "id_cliente": "$_id",
+                    "nombre": "$cliente.nombre",
+                    "apellido": "$cliente.apellido",
+                    "dni": "$cliente.dni",
+                    "activo": "$cliente.activo",
+                }
+            },
+        ]
+    )
+    return {
+        "sucursal": {
+            "id_sucursal": branch["_id"],
+            "nombre": branch["nombre"],
+            "tipo": branch["tipo"],
+        },
+        "clientes": list(customers),
+    }

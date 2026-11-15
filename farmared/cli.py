@@ -40,6 +40,7 @@ from farmared.services.q09_small_over_the_counter_sales import (
     SMALL_TOTAL,
     small_over_the_counter_sales,
 )
+from farmared.services.q10_customers_served_at_branch import customers_served_at_branch
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -87,6 +88,11 @@ def _q09(args: argparse.Namespace) -> None:
     print_result(f"q09 - Ventas libres con total menor a ${args.below}", result)
 
 
+def _q10(args: argparse.Namespace) -> None:
+    result = customers_served_at_branch(get_database(), args.id_sucursal)
+    print_result(f"q10 - Clientes atendidos en la sucursal {args.id_sucursal}", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -130,6 +136,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--below", type=int, default=SMALL_TOTAL, help="límite del total (por defecto 5000)"
     )
     q09.set_defaults(run=_q09)
+
+    q10 = commands.add_parser("q10", help="Clientes atendidos en una sucursal")
+    q10.add_argument("id_sucursal", help="identificador de la sucursal, por ejemplo S002")
+    q10.set_defaults(run=_q10)
 
     return parser
 
