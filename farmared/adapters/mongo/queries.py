@@ -10,7 +10,7 @@ from typing import Any
 from pymongo.database import Database
 
 from farmared.dates import to_datetime
-from farmared.domain.enums import SaleStatus
+from farmared.domain.enums import PrescriptionStatus, PrescriptionType, SaleStatus
 
 Document = dict[str, Any]
 
@@ -245,6 +245,58 @@ def active_pharmacists_with_sales_since(
                     }
                 },
                 {"$sort": {"cantidad_ventas": -1, "id_farmaceutico": 1}},
+            ]
+        )
+    )
+
+
+def overdue_long_term_prescriptions(database: Database[Document], today: date) -> list[Document]:
+    """q06. Valid long-term treatments whose next dispense was due before `today`.
+
+    The filter uses the index recetas {tipo, estado, proxima_dispensa}; $lookup then adds
+    the customer (recetas.id_cliente -> clientes._id) with all their data.
+    """
+    today_start = to_datetime(today)
+    return list(
+        database.recetas.aggregate(
+            [
+                {
+                    "$match": {
+                        "tipo": PrescriptionType.LONG_TERM.value,
+                        "estado": PrescriptionStatus.VALID.value,
+                        "proxima_dispensa": {"$lt": today_start},
+                        "activo": True,
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "clientes",
+                        "localField": "id_cliente",
+                        "foreignField": "_id",
+                        "as": "cliente",
+                    }
+                },
+                {"$unwind": "$cliente"},
+                {"$sort": {"proxima_dispensa": 1, "_id": 1}},
+                {
+                    "$replaceWith": {
+                        "id_receta": "$_id",
+                        "medico": "$medico",
+                        "fecha_emision": "$fecha_emision",
+                        "dispensas_autorizadas": "$dispensas_autorizadas",
+                        "dispensas_realizadas": "$dispensas_realizadas",
+                        "proxima_dispensa": "$proxima_dispensa",
+                        "dias_de_atraso": {
+                            "$dateDiff": {
+                                "startDate": "$proxima_dispensa",
+                                "endDate": today_start,
+                                "unit": "day",
+                            }
+                        },
+                        "cliente": {"$mergeObjects": [{"id_cliente": "$cliente._id"}, "$cliente"]},
+                    }
+                },
+                {"$unset": "cliente._id"},
             ]
         )
     )

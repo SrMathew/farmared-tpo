@@ -5,6 +5,7 @@
     python -m farmared q03 C006
     python -m farmared q04
     python -m farmared q05
+    python -m farmared q06
 
 This is the only place that creates the connections and hands them to the services.
 """
@@ -26,6 +27,9 @@ from farmared.services.q04_customers_with_several_prescriptions import (
     customers_with_several_prescriptions,
 )
 from farmared.services.q05_pharmacist_sales_last_60_days import pharmacist_sales_last_60_days
+from farmared.services.q06_overdue_long_term_prescriptions import (
+    overdue_long_term_prescriptions,
+)
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -53,6 +57,11 @@ def _q05(args: argparse.Namespace) -> None:
     print_result("q05 - Ventas por farmacéutico activo en los últimos 60 días", result)
 
 
+def _q06(args: argparse.Namespace) -> None:
+    result = overdue_long_term_prescriptions(get_database(), get_clock())
+    print_result("q06 - Tratamientos prolongados con dispensa atrasada", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -75,6 +84,9 @@ def build_parser() -> argparse.ArgumentParser:
         "q05", help="Farmacéuticos activos y sus ventas de los últimos 60 días"
     )
     q05.set_defaults(run=_q05)
+
+    q06 = commands.add_parser("q06", help="Tratamientos prolongados vigentes con dispensa atrasada")
+    q06.set_defaults(run=_q06)
 
     return parser
 

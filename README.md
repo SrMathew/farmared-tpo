@@ -135,11 +135,12 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 3   | Historial completo de un cliente: ventas y recetas en orden cronológico | `python -m farmared q03 C006` | MongoDB | [`q03_customer_history.py`](./farmared/services/q03_customer_history.py)
 4   | Clientes con más de una receta, indicando la cantidad | `python -m farmared q04` | MongoDB | [`q04_customers_with_several_prescriptions.py`](./farmared/services/q04_customers_with_several_prescriptions.py)
 5   | Farmacéuticos activos y cantidad de ventas de los últimos 60 días (sin anuladas), incluidos los que tienen cero | `python -m farmared q05` | MongoDB | [`q05_pharmacist_sales_last_60_days.py`](./farmared/services/q05_pharmacist_sales_last_60_days.py)
+6   | Recetas de tratamiento prolongado vigentes con la próxima dispensa atrasada, con los datos del cliente | `python -m farmared q06` | MongoDB | [`q06_overdue_long_term_prescriptions.py`](./farmared/services/q06_overdue_long_term_prescriptions.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
 
-Las consultas 6 a 15 se agregan en los próximos commits.
+Las consultas 7 a 15 se agregan en los próximos commits.
 
 ## 🧪 Tests y Calidad 🧪
 
