@@ -138,6 +138,7 @@ El resultado se imprime en formato JSON. Cada consulta está en su propio módul
 6   | Recetas de tratamiento prolongado vigentes con la próxima dispensa atrasada, con los datos del cliente | `python -m farmared q06` | MongoDB | [`q06_overdue_long_term_prescriptions.py`](./farmared/services/q06_overdue_long_term_prescriptions.py)
 7   | Top 5 productos más vendidos en unidades (solo ventas completadas) | `python -m farmared q07` | Redis (ranking) + MongoDB | [`q07_top_products.py`](./farmared/services/q07_top_products.py)
 8   | Lotes con menos de 50 unidades, indicando producto, sucursal y proveedor | `python -m farmared q08` | MongoDB | [`q08_low_stock_batches.py`](./farmared/services/q08_low_stock_batches.py)
+9   | Ventas de tipo "Venta libre" con total menor a $5.000, sin las anuladas | `python -m farmared q09` | MongoDB | [`q09_small_over_the_counter_sales.py`](./farmared/services/q09_small_over_the_counter_sales.py)
 
 `q01` responde desde la caché de Redis cuando existe (el campo `origen` del resultado indica
 de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
@@ -146,7 +147,7 @@ de dónde salió la respuesta). Con `--no-cache` lee siempre de MongoDB.
 es un dato derivado de las ventas guardadas en MongoDB: la carga lo deja armado, y si falta
 se reconstruye solo antes de responder. Con `--limit N` lista otra cantidad de productos.
 
-Las consultas 9 a 15 se agregan en los próximos commits.
+Las consultas 10 a 15 se agregan en los próximos commits.
 
 ### Coherencia entre Redis y MongoDB
 

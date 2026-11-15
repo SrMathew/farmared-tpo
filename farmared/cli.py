@@ -8,6 +8,7 @@
     python -m farmared q06
     python -m farmared q07 [--limit 5]
     python -m farmared q08 [--below 50]
+    python -m farmared q09 [--below 5000]
 
 This is the only place that creates the connections and hands them to the services.
 """
@@ -35,6 +36,10 @@ from farmared.services.q06_overdue_long_term_prescriptions import (
 )
 from farmared.services.q07_top_products import TOP, top_products
 from farmared.services.q08_low_stock_batches import LOW_STOCK, low_stock_batches
+from farmared.services.q09_small_over_the_counter_sales import (
+    SMALL_TOTAL,
+    small_over_the_counter_sales,
+)
 
 
 def _q01(args: argparse.Namespace) -> None:
@@ -77,6 +82,11 @@ def _q08(args: argparse.Namespace) -> None:
     print_result(f"q08 - Lotes con menos de {args.below} unidades", result)
 
 
+def _q09(args: argparse.Namespace) -> None:
+    result = small_over_the_counter_sales(get_database(), args.below)
+    print_result(f"q09 - Ventas libres con total menor a ${args.below}", result)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="farmared", description="Consultas del TPO FarmaRed")
     commands = parser.add_subparsers(dest="query", required=True, metavar="consulta")
@@ -114,6 +124,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--below", type=int, default=LOW_STOCK, help="límite de unidades (por defecto 50)"
     )
     q08.set_defaults(run=_q08)
+
+    q09 = commands.add_parser("q09", help="Ventas libres de total bajo, sin las anuladas")
+    q09.add_argument(
+        "--below", type=int, default=SMALL_TOTAL, help="límite del total (por defecto 5000)"
+    )
+    q09.set_defaults(run=_q09)
 
     return parser
 

@@ -10,7 +10,7 @@ from typing import Any
 from pymongo.database import Database
 
 from farmared.dates import to_datetime
-from farmared.domain.enums import PrescriptionStatus, PrescriptionType, SaleStatus
+from farmared.domain.enums import PrescriptionStatus, PrescriptionType, SaleStatus, SaleType
 
 Document = dict[str, Any]
 
@@ -380,6 +380,42 @@ def low_stock_batches(database: Database[Document], below: int) -> list[Document
                             "id_proveedor": "$proveedor._id",
                             "razon_social": "$proveedor.razon_social",
                         },
+                    }
+                },
+            ]
+        )
+    )
+
+
+def small_over_the_counter_sales(database: Database[Document], below: int) -> list[Document]:
+    """q09. Sales of type 'Venta libre' with a total under `below`, cancelled ones excluded.
+
+    A single collection is involved: the items are embedded in the sale, so the whole
+    answer comes from `ventas`. The filter uses the index ventas {tipo, total}.
+    """
+    return list(
+        database.ventas.aggregate(
+            [
+                {
+                    "$match": {
+                        "tipo": SaleType.OVER_THE_COUNTER.value,
+                        "total": {"$lt": below},
+                        "estado": {"$ne": SaleStatus.CANCELLED.value},
+                        "activo": True,
+                    }
+                },
+                {"$sort": {"fecha": 1, "_id": 1}},
+                {
+                    "$replaceWith": {
+                        "id_venta": "$_id",
+                        "fecha": "$fecha",
+                        "estado": "$estado",
+                        "total": "$total",
+                        "medio_pago": "$medio_pago",
+                        "id_cliente": "$id_cliente",
+                        "id_farmaceutico": "$id_farmaceutico",
+                        "id_sucursal": "$id_sucursal",
+                        "items": "$items",
                     }
                 },
             ]
